@@ -3,6 +3,7 @@ const connectDB = require("./database/connectDB");
 const express = require("express");
 const cors = require("cors");
 const app = new express();
+const authRouter = require("./routers/authRouter");
 app.use(cookieParser());
 app.use(express.json());
 app.use(
@@ -11,9 +12,7 @@ app.use(
     credentials: true,
   })
 );
-app.get("/noq/noqunreserved", async (req, res) => {
-  res.send("test");
-});
+app.use("/", authRouter);
 connectDB()
   .then(() => {
     console.log("Database connected successfully.");
