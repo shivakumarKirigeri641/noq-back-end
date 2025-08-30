@@ -11,18 +11,11 @@ authRouter.get("/noq/noqunreservedticket/login", async (req, res) => {
       process.env.SECRET_KEY
     );
     res.cookie("token", token, {
-      expiresIn: "1d",
+      expiresIn: "30s",
     });
     res.send("login created!");
   } catch (err) {
     res.status(502).json({ status: "Failed", message: err.message });
   }
 });
-authRouter.get(
-  "/noq/noqunreservedticket/stations",
-  checkAuthentication,
-  async (req, res) => {
-    res.send("test");
-  }
-);
 module.exports = authRouter;

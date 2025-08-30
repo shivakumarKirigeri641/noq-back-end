@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const app = new express();
 const authRouter = require("./routers/authRouter");
+const stationsRouter = require("./routers/stationsRouter");
 app.use(cookieParser());
 app.use(express.json());
 app.use(
@@ -13,6 +14,7 @@ app.use(
   })
 );
 app.use("/", authRouter);
+app.use("/", stationsRouter);
 connectDB()
   .then(() => {
     console.log("Database connected successfully.");
