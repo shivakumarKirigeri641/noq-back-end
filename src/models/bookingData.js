@@ -2,48 +2,82 @@ const mongoose = require("mongoose");
 
 const bookingDataSchema = new mongoose.Schema(
   {
-    sourceStation: { type: String, required: true },
-    destinationStation: { type: String, required: true },
-    dateAndTimeOfJourney: { type: Date, required: true },
+    sourceStation: {
+      type: {
+        _id: {
+          type: mongoose.Schema.Types.ObjectId,
+          required: true,
+        },
+        name: {
+          type: [String],
+          required: true,
+          minLength: 2,
+          maxLength: 50,
+        },
+        code: {
+          type: [String],
+          required: true,
+          minLength: 2,
+          maxLength: 6,
+        },
+      },
+      required: true,
+    },
+    destinationStation: {
+      type: {
+        _id: {
+          type: mongoose.Schema.Types.ObjectId,
+          required: true,
+        },
+        name: {
+          type: [String],
+          required: true,
+          minLength: 2,
+          maxLength: 50,
+        },
+        code: {
+          type: [String],
+          required: true,
+          minLength: 2,
+          maxLength: 6,
+        },
+      },
+      required: true,
+    },
+    dateOfJourney: { type: Date, required: true },
     adultsCount: { type: Number, default: 1, min: 1, max: 6, required: true },
     childrenCount: { type: Number, default: 0, min: 0, max: 6 },
     physicallyHandicapStatus: { type: Boolean, default: false },
     selfOrForOthersStatus: { type: Boolean, default: false },
-    mobileNumber: { type: String, minLength: 10, maxLength: 10 },
-    fareDetails: {
+    travellersmobileNumber: { type: String, minLength: 10, maxLength: 10 },
+    bookersmobileNumber: { type: String, minLength: 10, maxLength: 10 },
+    passengerDiscountDetails: {
       type: {
-        farePerIndividual: {
+        childFareDiscount: {
           type: Number,
-          default: 0,
+          default: 17,
           min: 0,
           max: 10000,
-          require: true,
-        },
-        childFarePerIndividual: {
-          type: Number,
-          default: 0,
-          min: 0,
-          max: 10000,
-          require: true,
+          required: true,
         },
         physicallyHandicappedDiscount: {
           type: Number,
-          default: 0,
+          default: 15,
           min: 0,
           max: 100,
-          require: true,
+          required: true,
         },
         generalDiscount: {
           type: Number,
           default: 0,
           min: 0,
           max: 100,
-          require: true,
+          required: true,
         },
       },
       required: true,
     },
-    trainDetails: {
+    trainAndFareDetails: {
       type: {
         trainNumber: {
           type: Number,

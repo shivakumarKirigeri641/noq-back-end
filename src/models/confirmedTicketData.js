@@ -23,7 +23,8 @@ const confirmedTicketDataSchema = new mongoose.Schema(
       required: true,
       default: false,
     },
-    dateAndTimeOfBooking: { type: Date, required: true },
+    dateAndTimeOfTicketBooking: { type: Date, required: true },
+    dateAndTimeOfTicketExpiry: { type: Date, required: true },
     approxArrivalDateAndTime: { type: Date },
     approxDepartureDateAndTime: { type: Date, required: true },
     paymentType: {
