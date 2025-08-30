@@ -14,6 +14,10 @@ const confirmedTicketDataSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    downloadId: {
+      type: String,
+      required: true,
+    },
     expiryStatus: {
       type: Boolean,
       required: true,
@@ -28,6 +32,19 @@ const confirmedTicketDataSchema = new mongoose.Schema(
       default: 0,
       min: 0,
       max: 3,
+    },
+    //qur code, scaning this turns to true & record the date & time, this confirms that you have really taken the ticket
+    boardingTrainDetails: {
+      type: {
+        boardingStatus: {
+          type: Boolean,
+          required: true,
+          default: false,
+        },
+        dateAndTimeOfBoarding: {
+          type: Date,
+        },
+      },
     },
   },
   { timestamps: true }
