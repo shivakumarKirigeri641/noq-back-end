@@ -5,6 +5,9 @@ const cors = require("cors");
 const app = new express();
 const authRouter = require("./routers/authRouter");
 const stationsRouter = require("./routers/stationsRouter");
+const trainsRouter = require("./routers/trainsRouter");
+const dummyRouter = require("./routers/dummyRouter");
+const bookingRouter = require("./routers/bookingRouter");
 app.use(cookieParser());
 app.use(express.json());
 app.use(
@@ -15,6 +18,9 @@ app.use(
 );
 app.use("/", authRouter);
 app.use("/", stationsRouter);
+app.use("/", bookingRouter);
+app.use("/", trainsRouter);
+app.use("/", dummyRouter);
 connectDB()
   .then(() => {
     console.log("Database connected successfully.");
