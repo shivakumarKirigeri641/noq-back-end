@@ -3,7 +3,7 @@ const checkAuthentication = require("../middleware/checkAuthentication");
 require("dotenv").config();
 const authRouter = express.Router();
 const jwt = require("jsonwebtoken");
-authRouter.get("/noq/noqunreservedticket/login", async (req, res) => {
+authRouter.post("/noq/noqunreservedticket/login", async (req, res) => {
   //HERE YOU have to creat jwt token and send it
   try {
     const token = await jwt.sign(

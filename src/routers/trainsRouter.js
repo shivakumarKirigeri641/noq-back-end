@@ -167,8 +167,9 @@ trainsRouter.post(
           const priceDetails = await priceData.find({
             $and: [
               { trainNumber: data[i]?.trainNumber },
-              { fromStnCode: sourceCode },
-              { toStnCode: destinationCode },
+              { fromStnCode: sourceCode.toUpperCase() },
+              { toStnCode: destinationCode.toUpperCase() },
+              { classCode: "SL" }, //FOR TIME BEING fetch only sleeper class as we don't have actual api
             ],
           });
           result.push({
