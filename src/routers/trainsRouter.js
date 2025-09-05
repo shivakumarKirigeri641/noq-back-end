@@ -172,10 +172,12 @@ trainsRouter.post(
               { classCode: "SL" }, //FOR TIME BEING fetch only sleeper class as we don't have actual api
             ],
           });
-          result.push({
-            traindDetails: data[i],
-            priceDetails,
-          });
+          if (0 < priceDetails?.length) {
+            result.push({
+              traindDetails: data[i],
+              priceDetails,
+            });
+          }
         }
       }
       res.status(200).json({ status: "STATUS_OK", result });

@@ -3,8 +3,8 @@ const checkAuthentication = require("../middleware/checkAuthentication");
 require("dotenv").config();
 const authRouter = express.Router();
 const jwt = require("jsonwebtoken");
+//login
 authRouter.post("/noq/noqunreservedticket/login", async (req, res) => {
-  //HERE YOU have to creat jwt token and send it
   try {
     const token = await jwt.sign(
       "_id", //_id
@@ -16,6 +16,16 @@ authRouter.post("/noq/noqunreservedticket/login", async (req, res) => {
     res.send("login created!");
   } catch (err) {
     res.status(502).json({ status: "Failed", message: err.message });
+  }
+});
+//logout
+authRouter.post("/twogms/logout", checkAuthentication, async (req, res) => {
+  //firsrt check if mobile number valid (exists in coll
+  try {
+    res.cookie("token", null, { expires: new Date(Date.now()) });
+    res.status(200).json({ status: "Ok", message: "Logout Successful" });
+  } catch (err) {
+    res.status(401).json({ status: "Failed", message: err.message });
   }
 });
 module.exports = authRouter;
