@@ -693,7 +693,6 @@ dummyRouter.post("/pricelist", async (req, res) => {
   }
 });
 dummyRouter.post("/bookicket", async (req, res) => {
-  1;
   try {
     const pool = await connectDB(); // get the pool instance
     //book one ticket
@@ -1064,7 +1063,9 @@ dummyRouter.post("/bookicket", async (req, res) => {
           ? seat_allot[i].split("/")[0]
           : "-",
         berth: !seat_allot[i].includes("GEN/WLT")
-          ? seat_allot[i].split("/")[2]
+          ? req.body.coachType === "1A"
+            ? seat_allot[i].split("/")[2][0]
+            : seat_allot[i].split("/")[2]
           : "-",
         seat: !seat_allot[i].includes("GEN/WLT")
           ? seat_allot[i].split("/")[1]
