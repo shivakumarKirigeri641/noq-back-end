@@ -1,14 +1,9 @@
-const getPNR = (listOfPnrs) => {
-  const pnr = null;
-  for (;;) {
-    generatePNR = () =>
-      Math.floor(1000000000 + Math.random() * 9000000000).toString();
-    if (!listOfPnrs.includes(generatePNR)) {
-      pnr = generatePNR;
-      break;
-    }
+const getPNR = () => {
+  // Typical Indian Railways PNR is 10 digits
+  let digits = "";
+  for (let i = 0; i < 10; i++) {
+    digits += Math.floor(Math.random() * 10); // random digit 0-9
   }
-  //get pnr distinct
-  return pnr;
+  return digits;
 };
 module.exports = getPNR;
