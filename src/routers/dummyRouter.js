@@ -1141,6 +1141,118 @@ dummyRouter.post("/gen-list-cnf", async (req, res) => {
 });
 dummyRouter.post("/cancelticket", async (req, res) => {
   const pool = await connectDB(); // get the pool instance
+  //first check if the pnr is active, i mean it should be before the chart prepared otherwise, cannot cancel
+  //1st step, cancel ticket should allote avalable
+  //2nd step, any waiting list from priority of 3a, 2a and then sl will be confirmed
+  const { pnr, seatindices } = req.body;
+  const result_ticketdetails = await pool.query(
+    "select * from ticketdata t join bookingdata b on t.booking_id = b.id where t.pnr_number = $1 and pnrstatus=$2",
+    [pnr, 0]
+  );
+  let booked_passenger_details = [];
+  booked_passenger_details =
+    result_ticketdetails.rows[0].ticketdetails.split("@");
+  let identification_passenger_details =
+    result_ticketdetails.rows[0].identifiationdetails.split("@");
+
+  if (
+    1 === booked_passenger_details.length ||
+    seatindices.length === booked_passenger_details.length
+  ) {
+    //cancel entire ticket
+  } else {
+    //specific ticket
+    console.log(booked_passenger_details[1]);
+    let arr = booked_passenger_details[1].split("/");
+    console.log(
+      booked_passenger_details[1].replace(arr[arr.length - 1], "CAN")
+    );
+    for (let i = 0; i < seatindices.length; i++) {
+      console.log(identification_passenger_details[seatindices[i]]);
+      let arr = booked_passenger_details[1].split("/");
+      //RPELAC IN TICKT
+      await pool.query(
+        "update ticketdata set ticketdetails = replace(ticketdetails, $1, $2) where booking_id = $3",
+        [
+          booked_passenger_details[seatindices[i]],
+          booked_passenger_details[seatindices[i]].replace(
+            arr[arr.length - 1],
+            "CAN"
+          ),
+          result_ticketdetails.rows[0].booking_id,
+        ]
+      );
+      //REPLACD IN SEAT
+      switch (result_ticketdetails.rows[0].coach_type) {
+        case "SL":
+          await pool.query(
+            "update seatsondate set coach_sl = replace(coach_sl, $1, $2) where train_number = $3 and date_of_journey = $4",
+            [
+              booked_passenger_details[seatindices[i]],
+              identification_passenger_details[seatindices[i]],
+              result_ticketdetails.rows[0].train_number,
+              result_ticketdetails.rows[0].date_of_journey,
+            ]
+          );
+          break;
+        case "1A":
+          await pool.query(
+            "update seatsondate set coach_1a = replace(coach_1a, $1, $2) where train_number = $3 and date_of_journey = $4",
+            [
+              booked_passenger_details[seatindices[i]],
+              identification_passenger_details[seatindices[i]],
+              result_ticketdetails.rows[0].train_number,
+              result_ticketdetails.rows[0].date_of_journey,
+            ]
+          );
+          break;
+        case "2A":
+          await pool.query(
+            "update seatsondate set coach_2a = replace(coach_2a, $1, $2) where train_number = $3 and date_of_journey = $4",
+            [
+              booked_passenger_details[seatindices[i]],
+              identification_passenger_details[seatindices[i]],
+              result_ticketdetails.rows[0].train_number,
+              result_ticketdetails.rows[0].date_of_journey,
+            ]
+          );
+          break;
+        case "3A":
+          await pool.query(
+            "update seatsondate set coach_3a = replace(coach_3a, $1, $2) where train_number = $3 and date_of_journey = $4",
+            [
+              booked_passenger_details[seatindices[i]],
+              identification_passenger_details[seatindices[i]],
+              result_ticketdetails.rows[0].train_number,
+              result_ticketdetails.rows[0].date_of_journey,
+            ]
+          );
+          break;
+        case "CC":
+          await pool.query(
+            "update seatsondate set coach_cc = replace(coach_cc, $1, $2) where train_number = $3 and date_of_journey = $4",
+            [
+              booked_passenger_details[seatindices[i]],
+              identification_passenger_details[seatindices[i]],
+              result_ticketdetails.rows[0].train_number,
+              result_ticketdetails.rows[0].date_of_journey,
+            ]
+          );
+          break;
+        case "EC":
+          await pool.query(
+            "update seatsondate set coach_ec = replace(coach_ec, $1, $2) where train_number = $3 and date_of_journey = $4",
+            [
+              booked_passenger_details[seatindices[i]],
+              identification_passenger_details[seatindices[i]],
+              result_ticketdetails.rows[0].train_number,
+              result_ticketdetails.rows[0].date_of_journey,
+            ]
+          );
+          break;
+      }
+    }
+  }
 
   res.json({ status: "Ok" });
 });
