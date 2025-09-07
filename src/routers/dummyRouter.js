@@ -702,7 +702,7 @@ dummyRouter.post("/bookicket", async (req, res) => {
       "select *from users order by random() limit 1"
     );
     let passengercount = 0;
-    req.body?.passengerDetails.forEach((element) => {
+    req.body.passengerDetails.forEach((element) => {
       psdetails =
         psdetails +
         element.passengerName +
@@ -724,14 +724,165 @@ dummyRouter.post("/bookicket", async (req, res) => {
     //explore to fetch seat details from string
     const doj = "2025-09-09";
     const train_number = "16535";
-    const result = await pool.query(
-      "select coach_sl from seatsondate where date_of_journey = $1 and train_number = $2;",
-      [doj, train_number]
-    );
-
-    let seats = result.rows[0].coach_sl;
-    let seatdetails = getAvailableSeatsCount(seats);
-    console.log(seatdetails);
+    let gen_seatcount = 0;
+    let seats = "";
+    let ttk_seatcount = 0;
+    let ptk_seatcount = 0;
+    let result = null;
+    for (p = 0; p < req.body.passengerDetails.length; p++) {
+      switch (req.body.reservationType) {
+        case "General":
+          switch (req.body.coachType.toUpperCase()) {
+            case "SL":
+              result = await pool.query(
+                "select coach_sl from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              seats = result.rows[0].coach_sl;
+              break;
+            case "1A":
+              result = await pool.query(
+                "select coach_1a from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              seats = result.rows[0].coach_1a;
+              break;
+            case "2A":
+              result = await pool.query(
+                "select coach_2a from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              seats = result.rows[0].coach_2a;
+              break;
+            case "3A":
+              result = await pool.query(
+                "select coach_3a from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              seats = result.rows[0].coach_3a;
+              break;
+            case "CC":
+              result = await pool.query(
+                "select coach_cc from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              seats = result.rows[0].coach_cc;
+              break;
+            case "EC":
+              result = await pool.query(
+                "select coach_ec from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              seats = result.rows[0].coach_ec;
+              break;
+            default:
+              break;
+          }
+          break;
+        case "Tatkal":
+          switch (req.body.coachType) {
+            case "SL":
+              let result = await pool.query(
+                "select coach_sl from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              let seats = result.rows[0].coach_sl;
+              break;
+            case "1A":
+              result = await pool.query(
+                "select coach_1a from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              seats = result.rows[0].coach_1a;
+              break;
+            case "2A":
+              result = await pool.query(
+                "select coach_2a from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              seats = result.rows[0].coach_2a;
+              break;
+            case "3A":
+              result = await pool.query(
+                "select coach_3a from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              seats = result.rows[0].coach_3a;
+              break;
+            case "CC":
+              result = await pool.query(
+                "select coach_cc from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              seats = result.rows[0].coach_cc;
+              break;
+            case "EC":
+              result = await pool.query(
+                "select coach_ec from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              seats = result.rows[0].coach_ec;
+              break;
+            default:
+              break;
+          }
+          break;
+        case "Premium Tatkal":
+          switch (req.body.coachType) {
+            case "SL":
+              let result = await pool.query(
+                "select coach_sl from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              let seats = result.rows[0].coach_sl;
+              break;
+            case "1A":
+              result = await pool.query(
+                "select coach_1a from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              seats = result.rows[0].coach_1a;
+              break;
+            case "2A":
+              result = await pool.query(
+                "select coach_2a from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              seats = result.rows[0].coach_2a;
+              break;
+            case "3A":
+              result = await pool.query(
+                "select coach_3a from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              seats = result.rows[0].coach_3a;
+              break;
+            case "CC":
+              result = await pool.query(
+                "select coach_cc from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              seats = result.rows[0].coach_cc;
+              break;
+            case "EC":
+              result = await pool.query(
+                "select coach_ec from seatsondate where date_of_journey = $1 and train_number = $2;",
+                [doj, train_number]
+              );
+              seats = result.rows[0].coach_ec;
+              break;
+            default:
+              break;
+          }
+          break;
+        default:
+          break;
+      }
+      //FIRST CHECK IF SEAT AVAILABLE OTHERWISE RAC OTHERWISE WTL
+      gen_seatcount = getAvailableSeatsCount("GNL", seats);
+      ttk_seatcount = getAvailableSeatsCount("TTK", seats);
+      ptk_seatcount = getAvailableSeatsCount("PTK", seats);
+    }
 
     /*const result = await pool.query(
       "insert into bookingdata (train_number, date_of_journey, date_of_booking, passenger_details, source, destination, reservation_type, coach_type, aadhar_number, amount, ipAddress, user_id) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)",
@@ -750,7 +901,14 @@ dummyRouter.post("/bookicket", async (req, res) => {
         userdata.rows[0].user_id,
       ]
     );*/
-    res.status(200).json({ status: "Ok", data: seatdetails });
+    res.status(200).json({
+      status: "Ok",
+      data: {
+        general: gen_seatcount,
+        tatkal: ttk_seatcount,
+        premium_tatkal: ptk_seatcount,
+      },
+    });
   } catch (err) {
     res.status(200).json({ status: "Failed", message: err.message });
   }

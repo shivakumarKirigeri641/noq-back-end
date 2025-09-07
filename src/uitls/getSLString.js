@@ -19,12 +19,13 @@ const getSLString = (
       seatno = 1;
       bogino++;
       seatcount = 1;
+      reservationtype = "GNL";
     }
-    if (i >= generalseatcount + racseatcount + tatkalcount) {
+    if (seatno > generalseatcount + racseatcount + tatkalcount) {
       reservationtype = "PTK";
-    } else if (i >= generalseatcount + racseatcount) {
+    } else if (seatno > generalseatcount + racseatcount) {
       reservationtype = "TTK";
-    } else if (i >= generalseatcount) {
+    } else if (seatno > generalseatcount) {
       reservationtype = "RAC";
     }
     actString =
