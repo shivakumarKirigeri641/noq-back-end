@@ -1,4 +1,5 @@
 const express = require("express");
+const cron = require("node-cron");
 const getPNR = require("../uitls/getPNR");
 const priceData = require("../models/priceData");
 const schedulesData = require("../models/schedulesData");
@@ -1150,4 +1151,13 @@ dummyRouter.post("/cancelticket", async (req, res) => {
   gen_availableseats = getAvailableSeatsCount("GNL", seats);
   res.json({ status: "Ok", data: { rac_availableseats, gen_availableseats } });
 });
+
+//cron job
+cron.schedule("0 25 18 * * *", () => {
+  console.log("first schedula job!");
+  mycheduledTask();
+});
+function mycheduledTask() {
+  console.log("this is executed!");
+}
 module.exports = dummyRouter;
