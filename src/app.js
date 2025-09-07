@@ -1,5 +1,5 @@
 const cookieParser = require("cookie-parser");
-const connectDB = require("./database/connectDB");
+const { connectDB } = require("./database/connectDB");
 const express = require("express");
 const cors = require("cors");
 const app = new express();
