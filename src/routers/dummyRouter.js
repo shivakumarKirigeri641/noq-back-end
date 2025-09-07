@@ -18,6 +18,7 @@ const is_Tatkal_SeatsAvailable = require("../uitls/is_Tatkal_SeatsAvailable");
 const is_Gen_SeatsAvailable = require("../uitls/is_Gen_SeatsAvailable");
 const getAvailableSeatsCount = require("../uitls/getAvailableSeatsCount");
 const getWaitingListCount = require("../uitls/getWaitingListCount");
+const getGenConfOnly = require("../uitls/getGenConfOnly");
 dummyRouter.post("/1test", async (req, res) => {
   try {
     coachData.collection.drop();
@@ -900,14 +901,15 @@ dummyRouter.post("/bookicket", async (req, res) => {
       if (0 < gen_availableseats?.count) {
         //conf
         seatcurrent = initialseat?.replace("AVL", "CNF");
-        allocated_seatdetails.push(gen_availableseats.seatdetails);
+        allocated_seatdetails.push(seatcurrent + " (Confirmed)");
         initialallocated_seatdetails.push(gen_availableseats.initialseat);
         newseats = seats.replace(initialseat, seatcurrent);
       } else if (0 < rac_availableseats?.count) {
         //rac
-        seatcurrent = initialseat.replace("RAC", "RCNF");
+        initialseat = rac_availableseats.seatdetails;
+        seatcurrent = initialseat.replace("AVL", "RCNF");
         newseats = seats.replace(initialseat, seatcurrent);
-        allocated_seatdetails.push(rac_availableseats.seatdetails);
+        allocated_seatdetails.push(seatcurrent + " (RAC confirmed)");
         initialallocated_seatdetails.push(rac_availableseats.initialseat);
       } else {
         //waiting list
@@ -1054,6 +1056,7 @@ dummyRouter.post("/bookicket", async (req, res) => {
     };
     let passengerDetails = [];
     let seat_allot = allocated_seatdetails;
+    console.log(allocated_seatdetails);
     for (let i = 0; i < req.body.passengerDetails.length; i++) {
       passengerDetails.push({
         passengerName: req.body.passengerDetails[i].passengerName,
@@ -1071,7 +1074,7 @@ dummyRouter.post("/bookicket", async (req, res) => {
           ? seat_allot[i].split("/")[1]
           : "-",
         status: !seat_allot[i].includes("GEN/WLT")
-          ? "Confirmed"
+          ? seat_allot[i].split("/")[5]
           : allocated_seatdetails[i].replace("@GEN/", ""),
       });
     }
@@ -1117,8 +1120,34 @@ dummyRouter.post("/fake-gen-filled", async (req, res) => {
   );
   res.json({ status: "ok" });
 });
+dummyRouter.post("/gen-list-cnf", async (req, res) => {
+  const pool = await connectDB(); // get the pool instance
+  const result = await pool.query(
+    "select coach_sl from seatsondate where train_number = $1 and date_of_journey=$2",
+    [req.body.train_number, req.body.dateOfJourney]
+  );
+  //console.log(result.rows[0].coach_sl);
+  const seats = getGenConfOnly(result.rows[0].coach_sl);
+  await pool.query(
+    "update seatsondate set coach_sl = $1 where train_number = $2 and date_of_journey=$3",
+    [seats, req.body.train_number, req.body.dateOfJourney]
+  );
+  res.json({ status: "ok" });
+});
 dummyRouter.post("/cancelticket", async (req, res) => {
   const pool = await connectDB(); // get the pool instance
-  res.json({ status: "Ok", data: resULT });
+  const result = await pool.query(
+    "select coach_sl from seatsondate where train_number = $1 and date_of_journey=$2",
+    [req.body.train_number, req.body.dateOfJourney]
+  );
+  const seats = result.rows[0].coach_sl;
+  rac_availableseats = getAvailableSeatsCount("RAC", seats);
+  /*gen_availableseats = getAvailableSeatsCount("GNL", seats);
+  rac_availableseats = getAvailableSeatsCount("RAC", seats);
+  ttk_availableseats = getAvailableSeatsCount("TTK", seats);
+  ptk_availableseats = getAvailableSeatsCount("PTK", seats);*/
+  //console.log(rac_availableseats);
+  gen_availableseats = getAvailableSeatsCount("GNL", seats);
+  res.json({ status: "Ok", data: { rac_availableseats, gen_availableseats } });
 });
 module.exports = dummyRouter;
