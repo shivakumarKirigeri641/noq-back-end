@@ -120,4 +120,6 @@ const newSeatAllocationCron = async () => {
 const prepareChartForAllTrains = async () => {
   const pool = await connectDB(); // get the pool instance
   //remember make pnrstatus=1 when chart prepared
+  //once chart prepared, if ticketare in waiting list-> auto refund initiate( just display the amt refund aste)
+  //update the seats
 };

@@ -20,6 +20,7 @@ const is_Gen_SeatsAvailable = require("../uitls/is_Gen_SeatsAvailable");
 const getAvailableSeatsCount = require("../uitls/getAvailableSeatsCount");
 const getWaitingListCount = require("../uitls/getWaitingListCount");
 const getGenConfOnly = require("../uitls/getGenConfOnly");
+const getHoursUntilMyJourney = require("../uitls/getHoursUntilMyJourney");
 dummyRouter.post("/1test", async (req, res) => {
   try {
     coachData.collection.drop();
@@ -700,7 +701,7 @@ dummyRouter.post("/bookicket", async (req, res) => {
     //book one ticket
     let psdetails = "";
     await pool.query(
-      "CREATE TABLE IF NOT EXISTS bookingData (id SERIAL PRIMARY KEY, train_number VARCHAR(20) NOT NULL, date_of_journey DATE NOT NULL, date_of_booking TIMESTAMP DEFAULT CURRENT_TIMESTAMP, passenger_details TEXT NOT NULL, source VARCHAR(100) NOT NULL, destination VARCHAR(100) NOT NULL, reservation_type VARCHAR(50) NOT NULL, coach_type VARCHAR(20) NOT NULL, aadhar_number VARCHAR(12), amount NUMERIC(10,2) NOT NULL, ipAddress INET NOT NULL, mobileNumber TEXT NOT NULL, user_id INT NOT NULL);"
+      "CREATE TABLE IF NOT EXISTS bookingData (id SERIAL PRIMARY KEY, train_number VARCHAR(20) NOT NULL, date_of_journey DATE NOT NULL, date_of_booking TIMESTAMP DEFAULT CURRENT_TIMESTAMP, passenger_details TEXT NOT NULL, source VARCHAR(100) NOT NULL, destination VARCHAR(100) NOT NULL, reservation_type VARCHAR(50) NOT NULL, coach_type VARCHAR(20) NOT NULL, aadhar_number VARCHAR(12), amount NUMERIC(10,2) NOT NULL, ipAddress INET NOT NULL, mobileNumber TEXT NOT NULL, user_id INT NOT NULL, refund_amount_details TEXT NOT NULL, refund_status_details TEXT NOT NULL, refund_comments_details TEXT NOT NULL);"
     );
     await pool.query(
       "CREATE TABLE IF NOT EXISTS ticketData (id SERIAL PRIMARY KEY, booking_id INT REFERENCES bookingData(id) ON DELETE CASCADE, ticketdetails VARCHAR(255) NOT NULL, identifiationdetails VARCHAR(255) NOT NULL, arrival TIME, departure TIME, pnrStatus INT NOT NULL, pnr_number VARCHAR(20) NOT NULL);"
@@ -709,6 +710,9 @@ dummyRouter.post("/bookicket", async (req, res) => {
       "select *from users order by random() limit 1"
     );
     let passengercount = 0;
+    let refund_amt_details = "";
+    let refund_status_details = "";
+    let refund_comments_details = "";
     req.body.passengerDetails.forEach((element) => {
       psdetails =
         psdetails +
@@ -724,9 +728,15 @@ dummyRouter.post("/bookicket", async (req, res) => {
         "/" +
         element.isPhysicallyHandicapped +
         "@";
+      refund_amt_details = refund_amt_details + "0" + "@";
+      refund_comments_details = refund_comments_details + "@";
+      refund_status_details = refund_status_details + "0" + "@";
       passengercount++;
     });
     psdetails = psdetails.slice(0, -1);
+    refund_amt_details = refund_amt_details.slice(0, -1);
+    refund_comments_details = refund_comments_details.slice(0, -1);
+    refund_status_details = refund_status_details.slice(0, -1);
 
     //explore to fetch seat details from string
     let gen_seatcount = 0;
@@ -985,7 +995,7 @@ dummyRouter.post("/bookicket", async (req, res) => {
       }
     }
     const bookinginfo = await pool.query(
-      "insert into bookingdata (train_number, date_of_journey, date_of_booking, passenger_details, source, destination, reservation_type, coach_type, aadhar_number, amount, ipAddress, mobilenumber, user_id) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *",
+      "insert into bookingdata (train_number, date_of_journey, date_of_booking, passenger_details, source, destination, reservation_type, coach_type, aadhar_number, amount, ipAddress, mobilenumber, user_id, refund_amount_details, refund_status_details, refund_comments_details) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13, $14, $15, $16) RETURNING *",
       [
         req.body.train_number,
         req.body.dateOfJourney,
@@ -1000,6 +1010,9 @@ dummyRouter.post("/bookicket", async (req, res) => {
         req.body.ipAddress,
         req.body.mobileNumber,
         userdata.rows[0].user_id,
+        refund_amt_details,
+        refund_status_details,
+        refund_comments_details,
       ]
     );
     //confirm ticket & pnr
@@ -1117,144 +1130,292 @@ dummyRouter.post("/reset-booking", async (req, res) => {
 });
 dummyRouter.post("/fake-gen-filled", async (req, res) => {
   const pool = await connectDB(); // get the pool instance
-  await pool.query(
+  /*await pool.query(
     `UPDATE seatsondate 
    SET coach_sl = REPLACE(coach_sl, $1, $2) 
    WHERE date_of_journey = $3 AND train_number = $4`,
     ["AVL", "CNF", req.body.dateOfJourney, req.body.train_number]
+  );*/
+  /*await pool.query(
+    "CREATE TABLE cancellationFeesData (id SERIAL PRIMARY KEY, cancel_48 NUMERIC(5,2) CHECK (cancel_48 BETWEEN 0 AND 100), cancel_12 NUMERIC(5,2) CHECK (cancel_12 BETWEEN 0 AND 100), cancel_4 NUMERIC(5,2) CHECK (cancel_4 BETWEEN 0 AND 100), cancel_waitinglist NUMERIC(5,2) CHECK (cancel_waitinglist BETWEEN 0 AND 100), cancel_full NUMERIC(5,2) CHECK (cancel_full BETWEEN 0 AND 100));"
   );
+  await pool.query(
+    "INSERT INTO cancellationFeesData (cancel_48, cancel_12, cancel_4, cancel_waitinglist, cancel_full) VALUES (10, 25, 50, 0, 100);"
+  );*/
+  /*await pool.query(
+    "update bookingdata set refund_amount_details = replace(refund_amount_details, $1, $2), refund_status_details=replace(refund_status_details, $3, $4), refund_comments_details=replace(refund_comments_details, $5, $6) where id=$7",
+    ["0", "25", "0", "1", "", "hello", 1]
+  );*/
+  const result = getHoursUntilMyJourney("2025-09-30T13:38:00.000Z", "9:08");
+  console.log(result);
   res.json({ status: "ok" });
 });
 dummyRouter.post("/gen-list-cnf", async (req, res) => {
   const pool = await connectDB(); // get the pool instance
-  const result = await pool.query(
+  /*const result = await pool.query(
     "select coach_sl from seatsondate where train_number = $1 and date_of_journey=$2",
     [req.body.train_number, req.body.dateOfJourney]
-  );
+  );*/
   //console.log(result.rows[0].coach_sl);
-  const seats = getGenConfOnly(result.rows[0].coach_sl);
+
+  /*const seats = getGenConfOnly(result.rows[0].coach_sl);
   await pool.query(
     "update seatsondate set coach_sl = $1 where train_number = $2 and date_of_journey=$3",
     [seats, req.body.train_number, req.body.dateOfJourney]
-  );
+  );*/
   res.json({ status: "ok" });
 });
 dummyRouter.post("/cancelticket", async (req, res) => {
-  const pool = await connectDB(); // get the pool instance
-  //first check if the pnr is active, i mean it should be before the chart prepared otherwise, cannot cancel
-  //1st step, cancel ticket should allote avalable
-  //2nd step, any waiting list from priority of 3a, 2a and then sl will be confirmed
-  const { pnr, seatindices } = req.body;
-  const result_ticketdetails = await pool.query(
-    "select * from ticketdata t join bookingdata b on t.booking_id = b.id where t.pnr_number = $1 and pnrstatus=$2",
-    [pnr, 0]
-  );
-  let booked_passenger_details = [];
-  booked_passenger_details =
-    result_ticketdetails.rows[0].ticketdetails.split("@");
-  let identification_passenger_details =
-    result_ticketdetails.rows[0].identifiationdetails.split("@");
+  try {
+    const pool = await connectDB(); // get the pool instance
+    //first check if the pnr is active, i mean it should be before the chart prepared otherwise, cannot cancel
+    //1st step, cancel ticket should allote avalable
+    //2nd step, any waiting list from priority of 3a, 2a and then sl will be confirmed
 
-  if (
-    1 === booked_passenger_details.length ||
-    seatindices.length === booked_passenger_details.length
-  ) {
-    //cancel entire ticket
-  } else {
-    //specific ticket
-    console.log(booked_passenger_details[1]);
-    let arr = booked_passenger_details[1].split("/");
-    console.log(
-      booked_passenger_details[1].replace(arr[arr.length - 1], "CAN")
+    const { pnr, seatindices } = req.body;
+    const result_ticketdetails = await pool.query(
+      "select * from ticketdata t join bookingdata b on t.booking_id = b.id where t.pnr_number = $1 and pnrstatus=$2",
+      [pnr, 0]
     );
-    for (let i = 0; i < seatindices.length; i++) {
-      console.log(identification_passenger_details[seatindices[i]]);
+    console.log(result_ticketdetails.rows[0]);
+    let refund_amt_details = result_ticketdetails.rows[0].refund_amount_details;
+    let refund_status_details =
+      result_ticketdetails.rows[0].refund_status_details;
+    let refund_comments_details =
+      result_ticketdetails.rows[0].refund_comments_details;
+    let refund_amt = refund_amt_details.split("@");
+    let refund_status = refund_status_details.split("@");
+    let refund_comment = refund_comments_details.split("@");
+    const cancellation_details = await pool.query(
+      "select *from cancellationfeesdata ORDER BY id DESC limit 1"
+    );
+    let booked_passenger_details = [];
+    booked_passenger_details =
+      result_ticketdetails.rows[0].ticketdetails.split("@");
+    let identification_passenger_details =
+      result_ticketdetails.rows[0].identifiationdetails.split("@");
+
+    if (
+      1 === booked_passenger_details.length ||
+      seatindices.length === booked_passenger_details.length
+    ) {
+      //cancel entire ticket
+    } else {
+      //specific ticket
+      console.log(booked_passenger_details[1]);
       let arr = booked_passenger_details[1].split("/");
-      //RPELAC IN TICKT
-      await pool.query(
-        "update ticketdata set ticketdetails = replace(ticketdetails, $1, $2) where booking_id = $3",
-        [
-          booked_passenger_details[seatindices[i]],
-          booked_passenger_details[seatindices[i]].replace(
-            arr[arr.length - 1],
-            "CAN"
-          ),
-          result_ticketdetails.rows[0].booking_id,
-        ]
-      );
-      //REPLACD IN SEAT
-      switch (result_ticketdetails.rows[0].coach_type) {
-        case "SL":
-          await pool.query(
-            "update seatsondate set coach_sl = replace(coach_sl, $1, $2) where train_number = $3 and date_of_journey = $4",
-            [
-              booked_passenger_details[seatindices[i]],
-              identification_passenger_details[seatindices[i]],
-              result_ticketdetails.rows[0].train_number,
+
+      //in UI, if you find 'CAN', then disable cancel check button
+      //check if anyon is already cancelled?
+
+      for (let i = 0; i < seatindices.length; i++) {
+        let arr = booked_passenger_details[seatindices[i]].split("/");
+        if ("CAN" === arr[arr.length - 1]) {
+          //throw new Error("You cannot cancel the selected passenger again!");
+        }
+      }
+      for (let i = 0; i < seatindices.length; i++) {
+        //console.log(identification_passenger_details[seatindices[i]]);
+        //RPELAC IN TICKT
+        await pool.query(
+          "update ticketdata set ticketdetails = replace(ticketdetails, $1, $2) where booking_id = $3",
+          [
+            booked_passenger_details[seatindices[i]],
+            booked_passenger_details[seatindices[i]].replace(
+              arr[arr.length - 1],
+              "CAN"
+            ),
+            result_ticketdetails.rows[0].booking_id,
+          ]
+        );
+        //amount refund initiate:
+        if (
+          booked_passenger_details[seatindices[i]].includes("WLT") &&
+          4 <
+            getHoursUntilMyJourney(
               result_ticketdetails.rows[0].date_of_journey,
+              result_ticketdetails.rows[0].departure
+            )
+        ) {
+          //ful refund
+          await pool.query(
+            "update bookingdata set refund_amount_details = replace(refund_amount_details, $1, $2), refund_status_details=replace(refund_status_details, $3, $4), refund_comments_details=replace(refund_comments_details, $5, $6) where id=$7",
+            [
+              refund_amt[seatindices[i]],
+              result_ticketdetails.rows[0].amount / refund_amt.length -
+                ((result_ticketdetails.rows[0].amount / refund_amt.length) *
+                  cancellation_details.rows[0].cancel_waitinglist) /
+                  100,
+              refund_status[seatindices[i]],
+              "1",
+              refund_comment[seatindices[i]],
+              "waiting list cancellation refund",
+              ticketDetails.rows[0].booking_id,
             ]
           );
-          break;
-        case "1A":
-          await pool.query(
-            "update seatsondate set coach_1a = replace(coach_1a, $1, $2) where train_number = $3 and date_of_journey = $4",
-            [
-              booked_passenger_details[seatindices[i]],
-              identification_passenger_details[seatindices[i]],
-              result_ticketdetails.rows[0].train_number,
+        } else {
+          console.log("inside");
+          if (
+            48 <
+            getHoursUntilMyJourney(
               result_ticketdetails.rows[0].date_of_journey,
-            ]
-          );
-          break;
-        case "2A":
-          await pool.query(
-            "update seatsondate set coach_2a = replace(coach_2a, $1, $2) where train_number = $3 and date_of_journey = $4",
-            [
-              booked_passenger_details[seatindices[i]],
-              identification_passenger_details[seatindices[i]],
-              result_ticketdetails.rows[0].train_number,
+              result_ticketdetails.rows[0].departure
+            )
+          ) {
+            //10% cancellationfees
+            console.log("here inside");
+            await pool.query(
+              "update bookingdata set refund_amount_details = replace(refund_amount_details, $1, $2), refund_status_details=replace(refund_status_details, $3, $4), refund_comments_details=replace(refund_comments_details, $5, $6) where id=$7",
+              [
+                refund_amt[seatindices[i]],
+                result_ticketdetails.rows[0].amount / refund_amt.length -
+                  ((result_ticketdetails.rows[0].amount / refund_amt.length) *
+                    cancellation_details.rows[0].cancel_48) /
+                    100,
+                //parmaeter replacing here i problem
+              ]
+            );
+          } else if (
+            12 <
+            getHoursUntilMyJourney(
               result_ticketdetails.rows[0].date_of_journey,
-            ]
-          );
-          break;
-        case "3A":
-          await pool.query(
-            "update seatsondate set coach_3a = replace(coach_3a, $1, $2) where train_number = $3 and date_of_journey = $4",
-            [
-              booked_passenger_details[seatindices[i]],
-              identification_passenger_details[seatindices[i]],
-              result_ticketdetails.rows[0].train_number,
+              result_ticketdetails.rows[0].departure
+            )
+          ) {
+            //30% cancellationfees
+            await pool.query(
+              "update bookingdata set refund_amount_details = replace(refund_amount_details, $1, $2), refund_status_details=replace(refund_status_details, $3, $4), refund_comments_details=replace(refund_comments_details, $5, $6) where id=$7",
+              [
+                refund_amt[seatindices[i]],
+                result_ticketdetails.rows[0].amount / refund_amt.length -
+                  ((result_ticketdetails.rows[0].amount / refund_amt.length) *
+                    cancellation_details.rows[0].cancel_12) /
+                    100,
+                refund_status[seatindices[i]],
+                "1",
+                refund_comment[seatindices[i]],
+                "waiting list cancellation refund",
+                result_ticketdetails.rows[0].booking_id,
+              ]
+            );
+          } else if (
+            4 <
+            getHoursUntilMyJourney(
               result_ticketdetails.rows[0].date_of_journey,
-            ]
-          );
-          break;
-        case "CC":
-          await pool.query(
-            "update seatsondate set coach_cc = replace(coach_cc, $1, $2) where train_number = $3 and date_of_journey = $4",
-            [
-              booked_passenger_details[seatindices[i]],
-              identification_passenger_details[seatindices[i]],
-              result_ticketdetails.rows[0].train_number,
-              result_ticketdetails.rows[0].date_of_journey,
-            ]
-          );
-          break;
-        case "EC":
-          await pool.query(
-            "update seatsondate set coach_ec = replace(coach_ec, $1, $2) where train_number = $3 and date_of_journey = $4",
-            [
-              booked_passenger_details[seatindices[i]],
-              identification_passenger_details[seatindices[i]],
-              result_ticketdetails.rows[0].train_number,
-              result_ticketdetails.rows[0].date_of_journey,
-            ]
-          );
-          break;
+              result_ticketdetails.rows[0].departure
+            )
+          ) {
+            //60% cancellationfees
+            await pool.query(
+              "update bookingdata set refund_amount_details = replace(refund_amount_details, $1, $2), refund_status_details=replace(refund_status_details, $3, $4), refund_comments_details=replace(refund_comments_details, $5, $6) where id=$7",
+              [
+                refund_amt[seatindices[i]],
+                result_ticketdetails.rows[0].amount / refund_amt.length -
+                  ((result_ticketdetails.rows[0].amount / refund_amt.length) *
+                    cancellation_details.rows[0].cancel_4) /
+                    100,
+                refund_status[seatindices[i]],
+                "1",
+                refund_comment[seatindices[i]],
+                "waiting list cancellation refund",
+                result_ticketdetails.rows[0].booking_id,
+              ]
+            );
+          } else {
+            //100% cancellationfees
+            await pool.query(
+              "update bookingdata set refund_amount_details = replace(refund_amount_details, $1, $2), refund_status_details=replace(refund_status_details, $3, $4), refund_comments_details=replace(refund_comments_details, $5, $6) where id=$7",
+              [
+                refund_amt[seatindices[i]],
+                result_ticketdetails.rows[0].amount / refund_amt.length -
+                  ((result_ticketdetails.rows[0].amount / refund_amt.length) *
+                    cancellation_details.rows[0].cancel_full) /
+                    100,
+                refund_status[seatindices[i]],
+                "1",
+                refund_comment[seatindices[i]],
+                "waiting list cancellation refund",
+                result_ticketdetails.rows[0].booking_id,
+              ]
+            );
+          }
+        }
+        //REPLACD IN SEAT
+        switch (result_ticketdetails.rows[0].coach_type) {
+          case "SL":
+            await pool.query(
+              "update seatsondate set coach_sl = replace(coach_sl, $1, $2) where train_number = $3 and date_of_journey = $4",
+              [
+                booked_passenger_details[seatindices[i]],
+                identification_passenger_details[seatindices[i]],
+                result_ticketdetails.rows[0].train_number,
+                result_ticketdetails.rows[0].date_of_journey,
+              ]
+            );
+            break;
+          case "1A":
+            await pool.query(
+              "update seatsondate set coach_1a = replace(coach_1a, $1, $2) where train_number = $3 and date_of_journey = $4",
+              [
+                booked_passenger_details[seatindices[i]],
+                identification_passenger_details[seatindices[i]],
+                result_ticketdetails.rows[0].train_number,
+                result_ticketdetails.rows[0].date_of_journey,
+              ]
+            );
+            break;
+          case "2A":
+            await pool.query(
+              "update seatsondate set coach_2a = replace(coach_2a, $1, $2) where train_number = $3 and date_of_journey = $4",
+              [
+                booked_passenger_details[seatindices[i]],
+                identification_passenger_details[seatindices[i]],
+                result_ticketdetails.rows[0].train_number,
+                result_ticketdetails.rows[0].date_of_journey,
+              ]
+            );
+            break;
+          case "3A":
+            await pool.query(
+              "update seatsondate set coach_3a = replace(coach_3a, $1, $2) where train_number = $3 and date_of_journey = $4",
+              [
+                booked_passenger_details[seatindices[i]],
+                identification_passenger_details[seatindices[i]],
+                result_ticketdetails.rows[0].train_number,
+                result_ticketdetails.rows[0].date_of_journey,
+              ]
+            );
+            break;
+          case "CC":
+            await pool.query(
+              "update seatsondate set coach_cc = replace(coach_cc, $1, $2) where train_number = $3 and date_of_journey = $4",
+              [
+                booked_passenger_details[seatindices[i]],
+                identification_passenger_details[seatindices[i]],
+                result_ticketdetails.rows[0].train_number,
+                result_ticketdetails.rows[0].date_of_journey,
+              ]
+            );
+            break;
+          case "EC":
+            await pool.query(
+              "update seatsondate set coach_ec = replace(coach_ec, $1, $2) where train_number = $3 and date_of_journey = $4",
+              [
+                booked_passenger_details[seatindices[i]],
+                identification_passenger_details[seatindices[i]],
+                result_ticketdetails.rows[0].train_number,
+                result_ticketdetails.rows[0].date_of_journey,
+              ]
+            );
+            break;
+        }
       }
     }
-  }
 
-  res.json({ status: "Ok" });
+    res.json({ status: "Ok" });
+  } catch (err) {
+    res.json({ status: "failed", error: err.message });
+  }
 });
 
 //cron job
