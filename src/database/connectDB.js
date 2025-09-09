@@ -4,11 +4,12 @@ let pool;
 const connectDB = async () => {
   if (!pool) {
     pool = new Pool({
-      user: "postgres",
-      host: "localhost",
-      password: "641641",
-      database: "NoQ",
-      port: 5432,
+      host: process.env.PGHOST,
+      user: process.env.PGUSER,
+      password: process.env.PGPASSWORD,
+      database: process.env.PGDATABASE,
+      port: process.env.PGPORT,
+      ssl: { rejectUnauthorized: false }, // needed for AWS RDS
     });
   }
   return pool; // return pool instance
