@@ -31,6 +31,8 @@ bookingRouter.get(
   "/unreserved-ticket/trains-list",
   checkAuthentication,
   async (req, res) => {
+    const pool = await connectDB(); // get the pool instance
+    const client = await pool.connect();
     try {
       const { src, dest, doj } = req.body;
       if (!src) {
@@ -39,9 +41,6 @@ bookingRouter.get(
       if (!dest) {
         throw new Error("Source is invalid!");
       }
-
-      const pool = await connectDB(); // get the pool instance
-      const client = await pool.connect();
       const d = new Date();
       const shortWeekName = d
         .toLocaleDateString("en-US", {
