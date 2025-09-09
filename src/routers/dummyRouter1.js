@@ -1,4 +1,5 @@
 const express = require("express");
+const fs = require("fs");
 const { connectDB } = require("../database/connectDB");
 require("dotenv").config();
 const dummyRouter1 = express.Router();
@@ -114,5 +115,51 @@ dummyRouter1.post("/createtablequeries", async (req, res) => {
     await client.release(); // release client back to pool
   }
 });
+dummyRouter1.post("/stations", async (req, res) => {
+  const pool = await connectDB(); // get the pool instance
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const data = fs.readFileSync(
+      "C:\\Users\\shiva\\source\\repos\\json_files\\stations.json",
+      "utf8"
+    );
+    const stations = JSON.parse(data);
 
+    let index = 0;
+    for (const station of stations) {
+      if (!station.trainCount) {
+        station.trainCount = 0;
+      }
+      console.log("inserting:", index++ + "/" + stations.length);
+      await client.query(
+        `INSERT INTO stations 
+          (name, code, utterances, name_hi, name_gu, district, state, trainCount, latitude, longitude, address)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+         ON CONFLICT (code) DO NOTHING`, // prevents duplicate codes
+        [
+          station.name,
+          station.code,
+          station.utterances,
+          station.name_hi,
+          station.name_gu,
+          station.district,
+          station.state,
+          station.trainCount,
+          station.latitude,
+          station.longitude,
+          station.address,
+        ]
+      );
+    }
+
+    await client.query("COMMIT");
+    res.send("ok");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    res.json({ status: "no ok", data: err.message });
+  } finally {
+    await client.release();
+  }
+});
 module.exports = dummyRouter1;
