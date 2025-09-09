@@ -8,109 +8,98 @@ dummyRouter1.post("/createtablequeries", async (req, res) => {
   try {
     await client.query("BEGIN"); // start transaction
     //all create table query goes here
-    await client.query(
-      "DROP TRIGGER IF EXISTS trg_wallet_deduction ON Wallet_Deductions"
-    );
-    await client.query(
-      "DROP TRIGGER IF EXISTS trg_wallet_credit ON Wallet_Credits"
-    );
-    await client.query("DROP FUNCTION IF EXISTS update_wallet_on_deduction()");
-    await client.query("DROP FUNCTION IF EXISTS update_wallet_on_credit()");
-    await client.query("DROP TABLE IF EXISTS TTLoginCountList CASCADE");
-    await client.query("DROP TABLE IF EXISTS TTLogin CASCADE");
-    await client.query("DROP TABLE IF EXISTS UserLoginCountList CASCADE");
-    await client.query("DROP TABLE IF EXISTS Tickets CASCADE");
-    await client.query("DROP TABLE IF EXISTS Journey_Plans CASCADE");
-    await client.query("DROP TABLE IF EXISTS Searches CASCADE");
-    await client.query("DROP TABLE IF EXISTS Wallet_Credits CASCADE");
-    await client.query("DROP TABLE IF EXISTS Wallet_Deductions CASCADE");
-    await client.query("DROP TABLE IF EXISTS Wallets CASCADE");
-    await client.query("DROP TABLE IF EXISTS Users CASCADE");
+    // Drop old triggers & function
+    await client.query("DROP FUNCTION IF EXISTS set_updated_at() CASCADE;");
 
-    await client.query(
-      "CREATE TABLE Users(user_id SERIAL PRIMARY KEY,mobile_number CHAR(10) NOT NULL UNIQUE,created_at TIME WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIME)"
-    );
-    await client.query("CREATE INDEX idx_users_mobile ON Users(mobile_number)");
+    // Drop tables in reverse order (safe cascade)
+    await client.query("DROP TABLE IF EXISTS ticketData CASCADE;");
+    await client.query("DROP TABLE IF EXISTS journeyPlanData CASCADE;");
+    await client.query("DROP TABLE IF EXISTS searchData CASCADE;");
+    await client.query("DROP TABLE IF EXISTS walletCreditData CASCADE;");
+    await client.query("DROP TABLE IF EXISTS walletDeductionData CASCADE;");
+    await client.query("DROP TABLE IF EXISTS walletData CASCADE;");
+    await client.query("DROP TABLE IF EXISTS userLoginCountList CASCADE;");
+    await client.query("DROP TABLE IF EXISTS ttLoginCountList CASCADE;");
+    await client.query("DROP TABLE IF EXISTS ttLogin CASCADE;");
+    await client.query("DROP TABLE IF EXISTS users CASCADE;");
 
+    // Users
     await client.query(
-      "CREATE TABLE TTLogin(id SERIAL PRIMARY KEY,tt_id TEXT NOT NULL UNIQUE,mobile_number CHAR(10) NOT NULL UNIQUE,created_at TIME WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIME)"
-    );
-    await client.query(
-      "CREATE INDEX idx_ttlogin_mobile ON TTLogin(mobile_number)"
+      "CREATE TABLE users (id SERIAL PRIMARY KEY, mobile_number TEXT NOT NULL, created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'), updated_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'));"
     );
 
+    // Wallet tables
     await client.query(
-      "CREATE TABLE Wallets(wallet_id SERIAL PRIMARY KEY,user_id INT NOT NULL REFERENCES Users(user_id) ON DELETE CASCADE,balance NUMERIC(12,2) NOT NULL DEFAULT 0,entry_time TIME WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIME)"
-    );
-    await client.query("CREATE INDEX idx_wallets_user ON Wallets(user_id)");
-
-    await client.query(
-      "CREATE TABLE Wallet_Deductions(deduction_id SERIAL PRIMARY KEY,wallet_id INT NOT NULL REFERENCES Wallets(wallet_id) ON DELETE CASCADE,deduction_amount NUMERIC(12,2) NOT NULL,deduction_time TIME WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIME,deduction_type SMALLINT NOT NULL)"
+      "CREATE TABLE walletData (id SERIAL PRIMARY KEY, fkUser INT REFERENCES users(id) ON DELETE CASCADE, balance NUMERIC NOT NULL, dateAndTimeOfEntry TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'), created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'), updated_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'));"
     );
     await client.query(
-      "CREATE INDEX idx_deductions_wallet ON Wallet_Deductions(wallet_id)"
-    );
-
-    await client.query(
-      "CREATE TABLE Wallet_Credits(credit_id SERIAL PRIMARY KEY,wallet_id INT NOT NULL REFERENCES Wallets(wallet_id) ON DELETE CASCADE,credit_amount NUMERIC(12,2) NOT NULL,credit_time TIME WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIME,pay_type SMALLINT NOT NULL)"
+      "CREATE TABLE walletDeductionData (id SERIAL PRIMARY KEY, fkWalletData INT REFERENCES walletData(id) ON DELETE CASCADE, deductAmount NUMERIC NOT NULL, dateAndTimeOfDeduction TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'), deductionType INT NOT NULL, created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'), updated_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'));"
     );
     await client.query(
-      "CREATE INDEX idx_credits_wallet ON Wallet_Credits(wallet_id)"
+      "CREATE TABLE walletCreditData (id SERIAL PRIMARY KEY, fkWalletData INT REFERENCES walletData(id) ON DELETE CASCADE, creditAmount NUMERIC NOT NULL, dateAndTimeOfCredit TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'), payType INT NOT NULL, created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'), updated_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'));"
     );
 
+    // Search & Journey
     await client.query(
-      "CREATE TABLE Searches(search_id SERIAL PRIMARY KEY,user_id INT NOT NULL REFERENCES Users(user_id) ON DELETE CASCADE,source_code TEXT NOT NULL,destination_code TEXT NOT NULL,source TEXT NOT NULL,destination TEXT NOT NULL,journey_datetime TIME WITHOUT TIME ZONE NOT NULL,search_time TIME WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIME)"
+      "CREATE TABLE searchData (id SERIAL PRIMARY KEY, fkUser INT REFERENCES users(id) ON DELETE CASCADE, source_code TEXT NOT NULL, destination_code TEXT NOT NULL, source TEXT NOT NULL, destination TEXT NOT NULL, dateOfJourney TIMESTAMP WITHOUT TIME ZONE NOT NULL, dateOfSearch TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'), created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'), updated_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'));"
     );
     await client.query(
-      "CREATE INDEX idx_searches_user_journey ON Searches(user_id, journey_datetime)"
-    );
-
-    await client.query(
-      "CREATE TABLE Journey_Plans(journey_plan_id SERIAL PRIMARY KEY,user_id INT NOT NULL REFERENCES Users(user_id) ON DELETE CASCADE,source_code TEXT NOT NULL,destination_code TEXT NOT NULL,source TEXT NOT NULL,destination TEXT NOT NULL,journey_datetime TIME WITHOUT TIME ZONE NOT NULL,adults SMALLINT NOT NULL,children SMALLINT NOT NULL,is_physically_handicapped BOOLEAN NOT NULL DEFAULT FALSE,total_amount NUMERIC(12,2) NOT NULL,pay_type SMALLINT NOT NULL,transaction_id TEXT NOT NULL,wallet_deduction_id INT REFERENCES Wallet_Deductions(deduction_id),train_number TEXT,train_name TEXT,tt_id TEXT)"
-    );
-    await client.query(
-      "CREATE INDEX idx_journey_user_date ON Journey_Plans(user_id, journey_datetime)"
-    );
-    await client.query(
-      "CREATE INDEX idx_journey_wallet_deduction ON Journey_Plans(wallet_deduction_id)"
+      "CREATE TABLE journeyPlanData (id SERIAL PRIMARY KEY, fkUser INT REFERENCES users(id) ON DELETE CASCADE, source_code TEXT NOT NULL, destination_code TEXT NOT NULL, source TEXT NOT NULL, destination TEXT NOT NULL, train_number TEXT NOT NULL, train_name TEXT NOT NULL, dateOfJourney TIMESTAMP WITHOUT TIME ZONE NOT NULL, adults INT NOT NULL, children INT NOT NULL, isPhysicallyHandicapped BOOLEAN DEFAULT FALSE, totalAmount NUMERIC NOT NULL, payType INT NOT NULL, transactionId TEXT NOT NULL, fkWalletDeductionData INT REFERENCES walletDeductionData(id) ON DELETE SET NULL, created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'), updated_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'));"
     );
 
+    // TT login
     await client.query(
-      "CREATE TABLE Tickets(ticket_id SERIAL PRIMARY KEY,journey_plan_id INT NOT NULL REFERENCES Journey_Plans(journey_plan_id) ON DELETE CASCADE,pnr TEXT NOT NULL UNIQUE,confirmation_time TIME WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIME,departure_time TIME WITHOUT TIME ZONE NOT NULL,pnr_status SMALLINT NOT NULL,comments TEXT)"
-    );
-    await client.query(
-      "CREATE INDEX idx_ticket_journey_pnr ON Tickets(journey_plan_id, pnr)"
-    );
-    await client.query(
-      "CREATE INDEX idx_ticket_departure ON Tickets(departure_time)"
+      "CREATE TABLE ttLogin (id SERIAL PRIMARY KEY, tt_id TEXT UNIQUE NOT NULL, mobile_number TEXT NOT NULL, created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'), updated_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'));"
     );
 
+    // Tickets
     await client.query(
-      "CREATE TABLE UserLoginCountList(login_id SERIAL PRIMARY KEY,user_id INT NOT NULL REFERENCES Users(user_id) ON DELETE CASCADE,otp NUMERIC(6) NOT NULL,date_and_time TIME WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIME)"
-    );
-    await client.query(
-      "CREATE INDEX idx_userlogin_user ON UserLoginCountList(user_id)"
+      "CREATE TABLE ticketData (id SERIAL PRIMARY KEY, fkJourneyPlanData INT REFERENCES journeyPlanData(id) ON DELETE CASCADE, pnr TEXT NOT NULL, dateAndTimeOfConfirmation TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'), departure TIMESTAMP WITHOUT TIME ZONE NOT NULL, pnrStatus INT NOT NULL, comments TEXT, verified_by INT REFERENCES ttLogin(id) ON DELETE SET NULL, created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'), updated_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'));"
     );
 
+    // Login count lists
     await client.query(
-      "CREATE TABLE TTLoginCountList(login_id SERIAL PRIMARY KEY,tt_id INT NOT NULL REFERENCES TTLogin(id) ON DELETE CASCADE,otp NUMERIC(6) NOT NULL,date_and_time TIME WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIME)"
+      "CREATE TABLE userLoginCountList (id SERIAL PRIMARY KEY, fkUser INT REFERENCES users(id) ON DELETE CASCADE, dateAndTime TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'), created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'), updated_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'));"
     );
     await client.query(
-      "CREATE INDEX idx_ttlogincount_tt ON TTLoginCountList(tt_id)"
-    );
-
-    await client.query(
-      "CREATE OR REPLACE FUNCTION update_wallet_on_deduction() RETURNS TRIGGER AS $$ BEGIN UPDATE Wallets SET balance = balance - NEW.deduction_amount WHERE wallet_id = NEW.wallet_id; RETURN NEW; END; $$ LANGUAGE plpgsql"
-    );
-    await client.query(
-      "CREATE TRIGGER trg_wallet_deduction AFTER INSERT ON Wallet_Deductions FOR EACH ROW EXECUTE FUNCTION update_wallet_on_deduction()"
+      "CREATE TABLE ttLoginCountList (id SERIAL PRIMARY KEY, fkTtLogin INT REFERENCES ttLogin(id) ON DELETE CASCADE, dateAndTime TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'), created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'), updated_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'));"
     );
 
+    // Trigger function
     await client.query(
-      "CREATE OR REPLACE FUNCTION update_wallet_on_credit() RETURNS TRIGGER AS $$ BEGIN UPDATE Wallets SET balance = balance + NEW.credit_amount WHERE wallet_id = NEW.wallet_id; RETURN NEW; END; $$ LANGUAGE plpgsql"
+      "CREATE OR REPLACE FUNCTION set_updated_at() RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql;"
+    );
+
+    // Attach triggers to every table
+    await client.query(
+      "CREATE TRIGGER trg_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION set_updated_at();"
     );
     await client.query(
-      "CREATE TRIGGER trg_wallet_credit AFTER INSERT ON Wallet_Credits FOR EACH ROW EXECUTE FUNCTION update_wallet_on_credit()"
+      "CREATE TRIGGER trg_walletData_updated_at BEFORE UPDATE ON walletData FOR EACH ROW EXECUTE FUNCTION set_updated_at();"
+    );
+    await client.query(
+      "CREATE TRIGGER trg_walletDeductionData_updated_at BEFORE UPDATE ON walletDeductionData FOR EACH ROW EXECUTE FUNCTION set_updated_at();"
+    );
+    await client.query(
+      "CREATE TRIGGER trg_walletCreditData_updated_at BEFORE UPDATE ON walletCreditData FOR EACH ROW EXECUTE FUNCTION set_updated_at();"
+    );
+    await client.query(
+      "CREATE TRIGGER trg_searchData_updated_at BEFORE UPDATE ON searchData FOR EACH ROW EXECUTE FUNCTION set_updated_at();"
+    );
+    await client.query(
+      "CREATE TRIGGER trg_journeyPlanData_updated_at BEFORE UPDATE ON journeyPlanData FOR EACH ROW EXECUTE FUNCTION set_updated_at();"
+    );
+    await client.query(
+      "CREATE TRIGGER trg_ttLogin_updated_at BEFORE UPDATE ON ttLogin FOR EACH ROW EXECUTE FUNCTION set_updated_at();"
+    );
+    await client.query(
+      "CREATE TRIGGER trg_ticketData_updated_at BEFORE UPDATE ON ticketData FOR EACH ROW EXECUTE FUNCTION set_updated_at();"
+    );
+    await client.query(
+      "CREATE TRIGGER trg_userLoginCountList_updated_at BEFORE UPDATE ON userLoginCountList FOR EACH ROW EXECUTE FUNCTION set_updated_at();"
+    );
+    await client.query(
+      "CREATE TRIGGER trg_ttLoginCountList_updated_at BEFORE UPDATE ON ttLoginCountList FOR EACH ROW EXECUTE FUNCTION set_updated_at();"
     );
 
     //all create table query goes here
@@ -125,4 +114,5 @@ dummyRouter1.post("/createtablequeries", async (req, res) => {
     await client.release(); // release client back to pool
   }
 });
+
 module.exports = dummyRouter1;
