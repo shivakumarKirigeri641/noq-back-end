@@ -1,6 +1,25 @@
+// connectDB.js
+const { Pool } = require("pg");
+let pool;
+const connectDB = async () => {
+  if (!pool) {
+    pool = new Pool({
+      host: process.env.PGHOST,
+      user: process.env.PGUSER,
+      password: process.env.PGPASSWORD,
+      database: process.env.PGDATABASE,
+      port: process.env.PGPORT,
+      ssl: { rejectUnauthorized: false }, // needed for AWS RDS
+    });
+  }
+  return pool; // return pool instance
+};
+
+module.exports = { connectDB };
+
+/*require("dotenv").config();
 const mongoose = require("mongoose");
-require("dotenv").config();
 const connectDB = async () => {
   await mongoose.connect(process.env.CONNECTION_SECRETKEY);
 };
-module.exports = connectDB;
+module.exports = { connectDB };*/

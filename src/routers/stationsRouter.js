@@ -11,7 +11,10 @@ stationsRouter.get(
   checkAuthentication,
   async (req, res) => {
     try {
-      const data = await stationsData.find({}).select("_id code name name_hi");
+      const data = await stationsData
+        .find({})
+        .select("_id code name name_hi")
+        .sort({ name: 1 });
       res.status(200).json({ status: "STATUS_OK", data });
     } catch (err) {
       res.send("errlr");
