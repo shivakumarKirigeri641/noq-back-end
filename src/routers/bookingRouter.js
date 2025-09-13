@@ -14,7 +14,7 @@ bookingRouter.get(
       const client = await pool.connect();
 
       const result = await client.query(
-        "select id, code, name from stations order by name asc"
+        "select id, code, station_name, zone, address from stations order by code"
       );
       await client.release();
       return res.json({
@@ -55,11 +55,12 @@ bookingRouter.get(
         throw new Error("Source/Destination not valid!");
       }
       const result = await client.query(
-        `select s.train_runs_on_${shortWeekName}, t1.train_number, s.train_name, t1.arrival_time::time, t1.departure_time::time from trains_and_stations_arrdept t1 join 
-trains_and_stations_arrdept t2 on t1.train_number = t2.train_number join schedules s on t1.train_number = s.train_number where 
-t1.station_code = $1 and t2.station_code=$2 and t1.stn_serial_number < t2.stn_serial_number 
-and s.train_runs_on_tue =$3 and (t1.arrival_time::time > (NOW() AT TIME ZONE 'Asia/Kolkata')::time or 
-(t1.arrival_time::time is null and t1.departure_time::time > (NOW() AT TIME ZONE 'Asia/Kolkata')::time)) order by departure_time asc`,
+        `select distinct t.train_number, t.zone, t.station_from as origin, t.station_to as destination, t.train_name, s1.station_code, s2.station_code, s1.arrival, s1.station_sequence, 
+        s1.departure  from trains t join schedules s1 on t.train_number = s1.train_number join schedules s2 on t.train_number = s1.train_number 
+where s1.station_code = $1 and s2.station_code=$2 and t.train_runs_on_${shortWeekName} = $3 and s1.station_sequence < s2.station_sequence and
+(s1.arrival::time > (NOW() AT TIME ZONE 'Asia/Kolkata')::time or 
+(s1.arrival::time is null and s1.departure::time > (NOW() AT TIME ZONE 'Asia/Kolkata')::time)) and s1.departure is not null order by s1.departure;
+`,
         [src.toUpperCase(), dest.toUpperCase(), "Y"]
       );
       return res.json({
@@ -68,6 +69,28 @@ and s.train_runs_on_tue =$3 and (t1.arrival_time::time > (NOW() AT TIME ZONE 'As
       });
     } catch (err) {
       res.status(502).json({ status: "Failed", message: err.message });
+    } finally {
+      await client.release();
+    }
+  }
+);
+//book-ticket
+bookingRouter.post(
+  "/unreserved-ticket/book-ticket",
+  checkAuthentication,
+  async (req, res) => {
+    const pool = await connectDB(); // get the pool instance
+    const client = await pool.connect();
+    try {
+      const {} = req.body;
+
+      await client.query("COMMIT");
+      return res.json({
+        success: true,
+      });
+    } catch (err) {
+      res.status(502).json({ status: "Failed", message: err.message });
+      await client.query("ROLLBACK");
     } finally {
       await client.release();
     }

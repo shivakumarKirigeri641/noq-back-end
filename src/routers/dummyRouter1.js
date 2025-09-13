@@ -162,4 +162,12 @@ dummyRouter1.post("/stations", async (req, res) => {
     await client.release();
   }
 });
+dummyRouter1.post("/test", async (req, res) => {
+  try {
+    res.json({ status: "ok" });
+  } catch (err) {
+    res.json({ status: "no ok", data: err.message });
+  } finally {
+  }
+});
 module.exports = dummyRouter1;
