@@ -13,7 +13,7 @@ stationsRouter.get(
       const result = await client.query(
         "select *from stations order by code asc"
       );
-      res.status(200).json({ status: "STATUS_OK", data: result });
+      res.status(200).json({ status: "STATUS_OK", data: result.rows });
     } catch (err) {
       res.send("errlr:" + err.message);
     }
