@@ -65,7 +65,7 @@ authRouter.post("/unreserved-ticket/verifyotp", async (req, res) => {
 //tt-login
 authRouter.post("/unreserved-ticket/ttlogin/verifyotp", async (req, res) => {
   try {
-    const { mobile_number, otp } = req.body;
+    const { mobile_number, ttid, otp } = req.body;
     if (!mobile_number || !/^\d{10}$/.test(mobile_number)) {
       return res
         .status(400)
@@ -84,8 +84,8 @@ authRouter.post("/unreserved-ticket/ttlogin/verifyotp", async (req, res) => {
     const pool = await connectDB(); // get the pool instance
     const client = await pool.connect();
     let result_mobilenumberdetails = await client.query(
-      "select id from ttlogin where mobile_number = $1",
-      [mobile_number]
+      "select id from ttlogin where mobile_number = $1 and tt_id = $2",
+      [mobile_number, ttid]
     );
     if (0 === result_mobilenumberdetails.rows.length) {
       result_mobilenumberdetails = await client.query(
