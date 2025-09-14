@@ -63,6 +63,7 @@ where t.pnr = $1
     }
   }
 );
+//confirm ticket verification
 ttRouter.put(
   "/unreserved-ticket/tt-data/tt-confirm-ticket-verification/:pnr",
   checkTTAuthentication,
@@ -91,6 +92,17 @@ where t.pnr = $1
         "select *from ttlogin where mobile_number=$1",
         [req.mobile_number]
       );
+      if (1 === reslt_pnrfulldetails.rows[0].pnrstatus) {
+        return res.status(200).json({
+          status: "Ok",
+          message: "Ticket already verified!",
+          pnr_status: "Checked now",
+        });
+      }
+      await client.query(`update ticketdata set pnrstatus=$1 where pnr =$2`, [
+        1,
+        pnr,
+      ]);
       await client.query(
         `insert into ttverificationdata (fkttid, fkticketdata) values ($1, $2)`,
         [result_ttdetails.rows[0].id, reslt_pnrfulldetails.rows[0].tickectid]
