@@ -49,7 +49,7 @@ authRouter.post("/unreserved-ticket/verifyotp", async (req, res) => {
       result_mobilenumberdetails.rows[0].id,
     ]);
     const token = await jwt.sign({ mobile_number }, process.env.SECRET_KEY, {
-      expiresIn: "100s",
+      expiresIn: "1d",
     });
     req.mobile_number = mobile_number;
     req.mobileid = result_mobilenumberdetails.rows[0].mobile_number;

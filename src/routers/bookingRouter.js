@@ -28,7 +28,7 @@ bookingRouter.get(
   }
 );
 //get trains on src, dest & doj selected
-bookingRouter.get(
+bookingRouter.post(
   "/unreserved-ticket/trains-list",
   checkAuthentication,
   async (req, res) => {
@@ -81,9 +81,9 @@ s1.station_code = $1 and
 s2.station_code=$2 and 
 s1.arrival BETWEEN CURRENT_TIME AND CURRENT_TIME + INTERVAL '4 hours' and
 t.train_runs_on_${shortWeekName} = $3 and
-c.gen='Y' and
+c.gen=$4 and
 s1.station_sequence <s2.station_sequence`,
-        [src.toUpperCase(), dest.toUpperCase(), "Y"]
+        [src.toUpperCase(), dest.toUpperCase(), "Y", "Y"]
       );
       //user
       const result_user = await client.query(
