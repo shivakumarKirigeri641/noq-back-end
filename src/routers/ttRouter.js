@@ -12,7 +12,6 @@ ttRouter.get(
     const client = await pool.connect();
     try {
       const pnr = req.params.pnr;
-      console.log(pnr);
       if (!pnr) {
         throw new Error("Invalid PNR!");
       }
@@ -40,7 +39,7 @@ where t.pnr = $1
         [reslt_pnrfulldetails.rows[0].ticketid]
       );
       if (0 < result_verification_details.rows.length) {
-        res.status(200).json({
+        return res.status(200).json({
           status: "Ok",
           message:
             "Ticket has been already verified on " +
@@ -72,7 +71,6 @@ ttRouter.put(
     const client = await pool.connect();
     try {
       const pnr = req.params.pnr;
-      console.log(pnr);
       if (!pnr) {
         throw new Error("Invalid PNR!");
       }

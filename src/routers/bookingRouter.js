@@ -153,7 +153,6 @@ bookingRouter.post(
       }
       if (!Number.isFinite(Number(child)) || 0 > child || 6 < child) {
         //dont check for !child and it will be always true if you pass 0
-        console.log(!child);
         throw new Error("Invalid minipassenger count!");
       }
       if (
@@ -256,7 +255,6 @@ bookingRouter.post(
       //generate ticket
       const pnr = getPNR();
       const transactionid = getPNR(); //for transactionid
-      console.log("test");
       const result_ticket = await client.query(
         `insert into ticketdata (fkjourneyplandata, pnr, departure, pnrstatus, transactionid) values ($1, $2, $3, $4, $5) returning *`,
         [
