@@ -15,6 +15,7 @@ const checkAuthentication = async (req, res, next) => {
         .status(200)
         .json({ status: "Failed", message: "Invalid session!" });
     }
+    req.mobile_number = result.mobilenumber;
   } catch (err) {
     if (err.name === "TokenExpiredError") {
       return res

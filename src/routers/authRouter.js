@@ -34,6 +34,16 @@ authRouter.post("/unreserved-ticket/verifyotp", async (req, res) => {
         "insert into users (mobile_number) values ($1) returning *",
         [mobilenumber]
       );
+      //insert wallet data
+      result_walletdata = await client.query(
+        "insert into walletdata (fkuser, balance) values ($1, $2) returning *",
+        [result_mobilenumberdetails.rows[0].id, 1000]
+      );
+      //insert wallet data credit
+      result_walletdata = await client.query(
+        "insert into walletcreditdata (fkwalletdata, creditamount,paytype) values ($1, $2, $3) returning *",
+        [result_walletdata.rows[0].id, 1000, 0]
+      );
     }
     await client.query("insert into userlogincountlist (fkuser) values ($1)", [
       result_mobilenumberdetails.rows[0].id,
