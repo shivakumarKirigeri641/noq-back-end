@@ -1,188 +1,99 @@
 const express = require("express");
-const priceData = require("../models/priceData");
-const getWeekDayNameInShort = require("../uitls/getWeekDayNameInShort");
+const { connectDB } = require("../database/connectDB");
 const checkAuthentication = require("../middleware/checkAuthentication");
 const trainsRouter = express.Router();
-const stationsData = require("../models/stationsData");
-const schedulesData = require("../models/schedulesData");
 //get trains based on src & dest provided with date (on clicking on search)
 trainsRouter.post(
-  "/noq/noqunreservedticket/:sourceCode/:destinationCode/:journeyDate",
+  "/unreserved-ticket/trains-list",
   checkAuthentication,
   async (req, res) => {
+    const pool = await connectDB(); // get the pool instance
+    const client = await pool.connect();
     try {
-      const { sourceCode, destinationCode, journeyDate } = req?.params;
-      if (!sourceCode) {
-        throw new Error("Invalid inputs!");
+      const { src, dest } = req.body;
+      if (!src) {
+        throw new Error("Source is invalid!");
       }
-      if (!destinationCode) {
-        throw new Error("Invalid inputs!");
+      if (!dest) {
+        throw new Error("Source is invalid!");
       }
-      if (!journeyDate) {
-        throw new Error("Invalid inputs!");
+      const d = new Date();
+      const shortWeekName = d
+        .toLocaleDateString("en-US", {
+          weekday: "short",
+        })
+        .toLowerCase();
+      const result_fromtodetails = await client.query(
+        "select *from stations where code = $1 or code= $2",
+        [src.toUpperCase(), dest.toUpperCase()]
+      );
+      if (0 === result_fromtodetails.rows.length) {
+        throw new Error("Source/Destination not valid!");
       }
-      const dayname = getWeekDayNameInShort(new Date(journeyDate));
-      let data = null;
-      switch (dayname) {
-        case "Mon":
-          data = await schedulesData.find({
-            $and: [
-              {
-                "stationList.stationCode": sourceCode.toUpperCase(),
-              },
-              {
-                "stationList.stationCode": destinationCode.toUpperCase(),
-              },
-              {
-                trainRunsOnMon: "Y",
-              },
-            ],
-          });
-          break;
-        case "Tue":
-          data = await schedulesData.find({
-            $and: [
-              {
-                "stationList.stationCode": sourceCode.toUpperCase(),
-              },
-              {
-                "stationList.stationCode": destinationCode.toUpperCase(),
-              },
-              {
-                trainRunsOnTue: "Y",
-              },
-            ],
-          });
-          break;
-        case "Wed":
-          data = await schedulesData.find({
-            $and: [
-              {
-                "stationList.stationCode": sourceCode.toUpperCase(),
-              },
-              {
-                "stationList.stationCode": destinationCode.toUpperCase(),
-              },
-              {
-                trainRunsOnWed: "Y",
-              },
-            ],
-          });
-          break;
-        case "Thu":
-          data = await schedulesData.find({
-            $and: [
-              {
-                "stationList.stationCode": sourceCode.toUpperCase(),
-              },
-              {
-                "stationList.stationCode": destinationCode.toUpperCase(),
-              },
-              {
-                trainRunsOnThu: "Y",
-              },
-            ],
-          });
-          break;
-        case "Fri":
-          data = await schedulesData.find({
-            $and: [
-              {
-                "stationList.stationCode": sourceCode.toUpperCase(),
-              },
-              {
-                "stationList.stationCode": destinationCode.toUpperCase(),
-              },
-              {
-                trainRunsOnFri: "Y",
-              },
-            ],
-          });
-          break;
-        case "Sat":
-          data = await schedulesData.find({
-            $and: [
-              {
-                "stationList.stationCode": sourceCode.toUpperCase(),
-              },
-              {
-                "stationList.stationCode": destinationCode.toUpperCase(),
-              },
-              {
-                trainRunsOnSat: "Y",
-              },
-            ],
-          });
-          break;
-        case "Sun":
-          data = await schedulesData.find({
-            $and: [
-              {
-                "stationList.stationCode": sourceCode.toUpperCase(),
-              },
-              {
-                "stationList.stationCode": destinationCode.toUpperCase(),
-              },
-              {
-                trainRunsOnSun: "Y",
-              },
-            ],
-          });
-          break;
+      //check if source is really present?
+      const result_source = await client.query(
+        "select code,station_name from stations where code =$1",
+        [src.toUpperCase()]
+      );
+      //check if destination  is really present?
+      const result_dest = await client.query(
+        "select code,station_name from stations where code =$1",
+        [dest.toUpperCase()]
+      );
+      if (0 === result_source.rows.length) {
+        throw new Error("Invalid source!");
       }
-      let result = [];
-      //src stnSerialNumber must be less, take only those trains
-      for (let i = 0; i < data.length; i++) {
-        let fromserialcode = 0;
-        let toserialcode = 0;
-        let fromserialcodefound = false;
-        let toserialcodefound = false;
-
-        //ist in string, stserialcode, cnvrt to number pls
-        for (let j = 0; j < data[i].stationList.length; j++) {
-          if (
-            data[i].stationList[j].stationCode.toUpperCase() ===
-            sourceCode.toUpperCase()
-          ) {
-            fromserialcode = Number.parseInt(
-              data[i].stationList[j].stnSerialNumber
-            );
-            fromserialcodefound = true;
-          }
-          if (
-            data[i].stationList[j].stationCode.toUpperCase() ===
-            destinationCode.toUpperCase()
-          ) {
-            toserialcode = Number.parseInt(
-              data[i].stationList[j].stnSerialNumber
-            );
-            toserialcodefound = true;
-          }
-          if (fromserialcodefound && toserialcodefound) {
-            break;
-          }
-        }
-        if (fromserialcode < toserialcode) {
-          //get price deatils
-          const priceDetails = await priceData.find({
-            $and: [
-              { trainNumber: data[i]?.trainNumber },
-              { fromStnCode: sourceCode.toUpperCase() },
-              { toStnCode: destinationCode.toUpperCase() },
-              { classCode: "SL" }, //FOR TIME BEING fetch only sleeper class as we don't have actual api
-            ],
-          });
-          if (0 < priceDetails?.length) {
-            result.push({
-              traindDetails: data[i],
-              priceDetails,
-            });
-          }
-        }
+      if (0 === result_dest.rows.length) {
+        throw new Error("Invalid Destination!");
       }
-      res.status(200).json({ status: "STATUS_OK", result });
+      const result = await client.query(
+        `select t.train_number, t.train_name, s1.arrival, s1.departure, s1.station_name as from_station, (s2.kilometer - s1.kilometer) as km, round((s2.kilometer - s1.kilometer)*0.3) as base_fare,
+t.station_from as train_source, t.station_to as train_destination,
+s2.station_name as to_station, s1.station_code, s2.station_code from schedules s1 join schedules s2 on s1.train_number = s2.train_number join
+trains t on t.train_number = s1.train_number join coaches c on c.train_number = t.train_number
+where
+s1.station_code = $1 and 
+s2.station_code=$2 and 
+s1.departure BETWEEN CURRENT_TIME AND CURRENT_TIME + INTERVAL '2 hours' and
+t.train_runs_on_${shortWeekName} = $3 and
+c.gen=$4 and
+s1.station_sequence <s2.station_sequence`,
+        [src.toUpperCase(), dest.toUpperCase(), "Y", "Y"]
+      );
+      //user
+      const result_user = await client.query(
+        "select u.id as userid, w.id as walletid from walletdata w join users u on u.id = w.fkuser where u.mobile_number = $1",
+        [req.mobile_number] //undiefind?
+      );
+      //insert into searchdata
+      const result_searchquery = await client.query(
+        "insert into searchdata (fkuser, source_code, destination_code, source, destination,dateofjourney) values ($1,$2,$3,$4,$5,$6)",
+        [
+          result_user.rows[0].userid,
+          result_source.rows[0].code,
+          result_dest.rows[0].code,
+          result_source.rows[0].station_name,
+          result_dest.rows[0].station_name,
+          new Date(Date.now()),
+        ]
+      );
+      if (0 < result.rows.length) {
+        return res.json({
+          success: true,
+          data: result.rows,
+          message: result.rows.length + " trains found.",
+        });
+      } else {
+        return res.json({
+          success: true,
+          data: result.rows,
+          message: "No trains found!",
+        });
+      }
     } catch (err) {
-      res.send("errlr" + err.message);
+      res.status(502).json({ status: "Failed", message: err.message });
+    } finally {
+      await client.release();
     }
   }
 );
