@@ -255,13 +255,16 @@ bookingRouter.post(
       );
       //generate ticket
       const pnr = getPNR();
+      const transactionid = getPNR(); //for transactionid
+      console.log("test");
       const result_ticket = await client.query(
-        `insert into ticketdata (fkjourneyplandata, pnr, departure, pnrstatus) values ($1, $2, $3, $4) returning *`,
+        `insert into ticketdata (fkjourneyplandata, pnr, departure, pnrstatus, transactionid) values ($1, $2, $3, $4, $5) returning *`,
         [
           result_bookedticket.rows[0].id,
           pnr,
           result_stationnames.rows[0].departure,
           0,
+          transactionid,
         ]
       );
 
@@ -303,6 +306,52 @@ bookingRouter.post(
           ],
         },
       });
+    } catch (err) {
+      res.status(502).json({ status: "Failed", message: err.message });
+      await client.query("ROLLBACK");
+    } finally {
+      await client.release();
+    }
+  }
+);
+
+//booking-history
+bookingRouter.get(
+  "/unreserved-ticket/booking-history",
+  checkAuthentication,
+  async (req, res) => {
+    const pool = await connectDB(); // get the pool instance
+    const client = await pool.connect();
+    try {
+      const { mobile_number } = req.body;
+      if (!mobile_number) {
+        throw new Error("Invalid mobile number!");
+      }
+      await client.query("BEGIN");
+      const reslt_pnrfulldetails = await client.query(
+        `SELECT t.pnr, t.pnrstatus, t.departure, t.datenadtimeofconfirmation, j.source_code,
+j.destination_code, j.source, j.destination, j.train_number, j.train_name,
+j.dateofjourney, j.adults, j.children, j.isphysicallyhandicapped, j.totalamount, j.paytype,
+u.mobile_number from ticketdata t join journeyplandata j on j.id = t.fkjourneyplandata join
+users u on j.fkuser = u.id
+where u.mobile_number = $1
+`,
+        [mobile_number]
+      );
+      await client.query("COMMIT");
+      if (0 === reslt_pnrfulldetails.rows.length) {
+        res.status(200).json({
+          status: "Ok",
+          message: "No tickets found",
+          data: reslt_pnrfulldetails.rows,
+        });
+      } else {
+        res.status(200).json({
+          status: "Ok",
+          message: "Details fetch successful",
+          data: reslt_pnrfulldetails.rows,
+        });
+      }
     } catch (err) {
       res.status(502).json({ status: "Failed", message: err.message });
       await client.query("ROLLBACK");

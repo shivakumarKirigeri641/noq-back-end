@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const checkAuthentication = async (req, res, next) => {
+const checkTTAuthentication = async (req, res, next) => {
   const { token } = req.cookies;
   if (!token) {
     return res
@@ -30,4 +30,4 @@ const checkAuthentication = async (req, res, next) => {
   const keytext = process.env.SECRET_PAYLOAD;
   next();
 };
-module.exports = checkAuthentication;
+module.exports = checkTTAuthentication;
