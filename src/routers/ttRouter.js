@@ -4,6 +4,7 @@ const ttRouter = express.Router();
 const jwt = require("jsonwebtoken");
 const { connectDB } = require("../database/connectDB");
 const checkTTAuthentication = require("../middleware/checkTTAuthentication");
+//verify-ticket
 ttRouter.get(
   "/unreserved-ticket/tt-data/verify-ticket/:pnr",
   checkTTAuthentication,
@@ -113,6 +114,51 @@ where t.pnr = $1
         message: "Ticket verification successful",
         pnr_status: "Checked now",
       });
+    } catch (err) {
+      res.status(502).json({ status: "Failed", message: err.message });
+      await client.query("ROLLBACK");
+    } finally {
+      await client.release();
+    }
+  }
+);
+//ticket verifiaction history
+ttRouter.post(
+  "/unreserved-ticket/tt-data/verify-ticketp-history",
+  checkTTAuthentication,
+  async (req, res) => {
+    const pool = await connectDB(); // get the pool instance
+    const client = await pool.connect();
+    try {
+      const { mobile_number } = req.body;
+      if (!mobile_number) {
+        throw new Error("Invalid mobile number!");
+      }
+      await client.query("BEGIN");
+      const reslt_pnrfulldetails = await client.query(
+        `select tl.mobile_number, tl.tt_id,t.pnr, t.pnrstatus, t.comments, t.departure, j.source_code, j.destination_code,
+j.source, j.destination, j.adults, j.children, j.totalamount,
+tt.dateandtimeofverification from ttverificationdata tt join ticketdata t on t.id = tt.fkticketdata 
+join ttlogin tl on tl.id = tt.fkttid
+join journeyplandata j on t.fkjourneyplandata = j.id
+where tl.mobile_number = $1 and t.verified_by = tl.id
+`,
+        [mobile_number]
+      );
+      await client.query("COMMIT");
+      if (0 === reslt_pnrfulldetails.rows.length) {
+        res.status(200).json({
+          status: "Ok",
+          message: "No verification details found",
+          data: reslt_pnrfulldetails.rows,
+        });
+      } else {
+        res.status(200).json({
+          status: "Ok",
+          message: "Details fetch successful",
+          data: reslt_pnrfulldetails.rows,
+        });
+      }
     } catch (err) {
       res.status(502).json({ status: "Failed", message: err.message });
       await client.query("ROLLBACK");

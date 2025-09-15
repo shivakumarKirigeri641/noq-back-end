@@ -219,7 +219,7 @@ bookingRouter.post(
 );
 
 //booking-history
-bookingRouter.get(
+bookingRouter.post(
   "/unreserved-ticket/booking-history",
   checkAuthentication,
   async (req, res) => {
