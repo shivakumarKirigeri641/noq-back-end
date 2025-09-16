@@ -4,6 +4,22 @@ require("dotenv").config();
 const authRouter = express.Router();
 const jwt = require("jsonwebtoken");
 const { connectDB } = require("../database/connectDB");
+authRouter.post("/unreserved-ticket/send-otp", async (req, res) => {
+  try {
+    const { mobile_number, otp } = req.body;
+    if (!mobile_number || !/^\d{10}$/.test(mobile_number)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid mobile number" });
+    }
+    return res.json({
+      success: true,
+      message: "OTP sent successfully.",
+    });
+  } catch (err) {
+    return res.status(502).json({ status: "Failed", message: err.message });
+  }
+});
 //login
 authRouter.post("/unreserved-ticket/verifyotp", async (req, res) => {
   try {
@@ -53,7 +69,12 @@ authRouter.post("/unreserved-ticket/verifyotp", async (req, res) => {
     });
     req.mobile_number = mobile_number;
     req.mobileid = result_mobilenumberdetails.rows[0].mobile_number;
-    res.cookie("token", token);
+    //res.cookie("token", token);
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true, // only for https
+      sameSite: "None", // needed for cross-origin})
+    });
     return res.json({
       success: true,
       message: "Mobile number and OTP verified successfully.",

@@ -124,7 +124,7 @@ where t.pnr = $1
 );
 //ticket verifiaction history
 ttRouter.post(
-  "/unreserved-ticket/tt-data/verify-ticketp-history",
+  "/unreserved-ticket/tt-data/verify-ticket-history",
   checkTTAuthentication,
   async (req, res) => {
     const pool = await connectDB(); // get the pool instance

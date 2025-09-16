@@ -186,6 +186,7 @@ bookingRouter.post(
           },
           ticket_details: {
             pnr: result_ticket.rows[0].pnr,
+            pnr_status: result_ticket.rows[0].pnrstatus,
             scheduled_departure: result_ticket.rows[0].departure,
             ticket_confirmation_datetime: result_ticket.rows[0].created_at,
           },
