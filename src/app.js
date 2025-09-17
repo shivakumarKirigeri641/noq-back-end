@@ -22,7 +22,7 @@ app.use("/", authRouter);
 app.use("/", stationsRouter);
 app.use("/", bookingRouter);
 app.use("/", trainsRouter);
-app.use("/", dummyRouter1);
+//app.use("/", dummyRouter1);
 app.use("/", ttRouter);
 connectDB()
   .then(() => {
