@@ -2,6 +2,7 @@ const cookieParser = require("cookie-parser");
 const { connectDB } = require("./database/connectDB");
 const express = require("express");
 const cors = require("cors");
+require("dotenv").config();
 const app = new express();
 const authRouter = require("./routers/authRouter");
 const stationsRouter = require("./routers/stationsRouter");
@@ -26,7 +27,7 @@ app.use("/", ttRouter);
 connectDB()
   .then(() => {
     console.log("Database connected successfully.");
-    app.listen(8888, () => {
+    app.listen(process.env.OPTIONALPORT, () => {
       console.log("Server is listening now.");
     });
   })

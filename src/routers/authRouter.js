@@ -4,18 +4,41 @@ require("dotenv").config();
 const authRouter = express.Router();
 const jwt = require("jsonwebtoken");
 const { connectDB } = require("../database/connectDB");
+const { default: axios } = require("axios");
+
+// Temporary store for OTPs (demo only)
+const otpStore = {};
+
+// Generate 6-digit OTP
+function generateOTP() {
+  return Math.floor(1000 + Math.random() * 9000);
+}
 authRouter.post("/unreserved-ticket/send-otp", async (req, res) => {
   try {
-    const { mobile_number, otp } = req.body;
+    const { mobile_number } = req.body;
     if (!mobile_number || !/^\d{10}$/.test(mobile_number)) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid mobile number" });
     }
-    return res.json({
-      success: true,
-      message: "OTP sent successfully.",
-    });
+
+    const otp = generateOTP();
+    otpStore[mobile_number] = otp; // store OTP
+    const validfor = 3;
+    const fast2smsResp = await axios.get(
+      `https://www.fast2sms.com/dev/bulkV2?authorization=${process.env.FAST2SMS_API_KEY}&route=dlt&sender_id=NOQTRN&message=198302&variables_values=${otp}|${validfor}&numbers=${mobile_number}`
+    );
+
+    console.log(fast2smsResp);
+    if (fast2smsResp.data && fast2smsResp.data.return) {
+      return res.json({
+        ok: true,
+        message: "OTP sent successfully.",
+      });
+    } else {
+      // bubble details for debugging
+      return res.status(502).json({ ok: false, detail: fast2smsResp.data });
+    }
   } catch (err) {
     return res.status(502).json({ status: "Failed", message: err.message });
   }
@@ -35,7 +58,11 @@ authRouter.post("/unreserved-ticket/verifyotp", async (req, res) => {
         .json({ success: false, message: "Invalid mobile otp provided!" });
     }
     //check if mobile number exists?
-
+    if (otpStore[mobile_number] && otpStore[mobile_number] == otp) {
+      delete otpStore[mobile_number]; // remove OTP after verification
+    } else {
+      return res.status(400).json({ success: false, message: "Invalid OTP" });
+    }
     //if no, insert
     //else get the primary id and insert into userloginlistcount table
     //insert query
