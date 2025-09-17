@@ -1,23 +1,21 @@
 const express = require("express");
-const priceData = require("../models/priceData");
 const getWeekDayNameInShort = require("../uitls/getWeekDayNameInShort");
 const checkAuthentication = require("../middleware/checkAuthentication");
 const stationsRouter = express.Router();
-const stationsData = require("../models/stationsData");
-const schedulesData = require("../models/schedulesData");
-//get the list of stations
+const { connectDB } = require("../database/connectDB");
 stationsRouter.get(
-  "/noq/noqunreservedticket/stations",
+  "/unreserved-ticket/stations",
   checkAuthentication,
   async (req, res) => {
     try {
-      const data = await stationsData
-        .find({})
-        .select("_id code name name_hi")
-        .sort({ name: 1 });
-      res.status(200).json({ status: "STATUS_OK", data });
+      const pool = await connectDB(); // get the pool instance
+      const client = await pool.connect();
+      const result = await client.query(
+        "select *from stations order by code asc"
+      );
+      res.status(200).json({ status: "STATUS_OK", data: result.rows });
     } catch (err) {
-      res.send("errlr");
+      res.send("errlr:" + err.message);
     }
   }
 );
