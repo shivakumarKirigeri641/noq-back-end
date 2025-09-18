@@ -1,5 +1,6 @@
 const cookieParser = require("cookie-parser");
 const { connectDB } = require("./database/connectDB");
+require("./schedulars/newSeatAllocationCron");
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();

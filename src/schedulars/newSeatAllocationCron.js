@@ -1,16 +1,61 @@
 const { connectDB } = require("../database/connectDB");
 const cron = require("node-cron");
-cron.schedule("*/15 * * * *", async () => {
-  console.log("first schedula job!");
-  //await newSeatAllocationCron();
-  await checkAndExpireTicket();
+cron.schedule("*/2 * * * * *", async () => {
+  console.log("Checking ticket expirey!", new Date());
+  // await newSeatAllocationCron();
+  const pool = await connectDB(); // get the pool instance
+  const client = await pool.connect();
+  await checkAndExpireTicket(client);
 });
-const checkAndExpireTicket = async () => {
+const checkAndExpireTicket = async (client) => {
   try {
+    const result_active_pnrs = await client.query(
+      "select pnr from ticketdata where pnrstatus=$1",
+      [0]
+    );
     //first for each ticket, get the arrival time of that train for that specified destination mentioned in ticket
-    //add 1hr extra to that time,
-    //now if it matches that hour& min, expire it
-  } catch (err) {}
+    await client.query("BEGIN");
+    for (let i = 0; i < result_active_pnrs.rows.length; i++) {
+      const reslt_fulldetails = await client.query(
+        `SELECT t.id, t.pnr, j.train_number, s.arrival, s.running_day FROM ticketdata t join journeyplandata j on t.fkjourneyplandata = j.id
+join schedules s on j.train_number = s.train_number
+where s.train_number = j.train_number and
+s.station_code = j.destination_code and
+t.pnr = $1;`,
+        [result_active_pnrs.rows[i].pnr]
+      );
+      //add1 1hr to fetcjed time
+      let [hours, minutes, seconds] = reslt_fulldetails.rows[0].arrival
+        .split(":")
+        .map(Number);
+      let dateObj = new Date();
+      dateObj.setHours(hours, minutes, seconds || 0, 0);
+      //add 1hr extra to that time,
+      dateObj.setHours(dateObj.getMinutes() + 1);
+
+      //now if it matches that hour& min, expire it
+      // Current time (today)
+      let now = new Date();
+      if (dateObj < now) {
+        //update pnrstatus=2 (which is expired automatically)
+        await client.query(
+          "update ticketdata set pnrstatus=$1 where pnr = $2",
+          [2, result_active_pnrs.rows[i].pnr]
+        );
+        console.log(
+          "Ticket:",
+          result_active_pnrs.rows[i].pnr + " expired automatically at:",
+          now
+        );
+      }
+    }
+    await client.query("COMMIT");
+  } catch (err) {
+    console.log("Error while cron: Error", err.message);
+    client.query("ROLLBACK");
+  } finally {
+    await client.release();
+  }
 };
 const newSeatAllocationCron = async () => {
   const pool = await connectDB(); // get the pool instance
