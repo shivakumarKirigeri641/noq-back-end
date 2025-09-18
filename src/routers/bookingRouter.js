@@ -131,7 +131,9 @@ bookingRouter.post(
       }
 
       //insert
-      const today = new Date().toISOString().split("T")[0];
+      const today = new Date().toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+      });
       const result_traindetails = await client.query(
         "select *from trains where train_number=$1",
         [train_number]
@@ -220,14 +222,15 @@ bookingRouter.post(
 );
 
 //booking-history
-bookingRouter.post(
+bookingRouter.get(
   "/unreserved-ticket/booking-history",
   checkAuthentication,
   async (req, res) => {
     const pool = await connectDB(); // get the pool instance
     const client = await pool.connect();
     try {
-      const { mobile_number } = req.body;
+      const mobile_number = req.mobile_number;
+      console.log(req.mobile_number);
       if (!mobile_number) {
         throw new Error("Invalid mobile number!");
       }
