@@ -1,3 +1,4 @@
+const serveless = require("serverless-http");
 const cookieParser = require("cookie-parser");
 const { connectDB } = require("./database/connectDB");
 require("./schedulars/newSeatAllocationCron");
@@ -35,3 +36,4 @@ connectDB()
   .catch((err) => {
     console.log("Error in connecting database: Error:" + err.message);
   });
+module.exports.handler = serveless(app);
