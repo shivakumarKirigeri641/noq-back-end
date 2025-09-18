@@ -22,7 +22,17 @@ authRouter.post("/unreserved-ticket/send-otp", async (req, res) => {
         .status(400)
         .json({ success: false, message: "Invalid mobile number" });
     }
-
+    //first check if tt logins,
+    const result_ttdetils = await client.query(
+      "select tt_id from ttlogin where mobile_number = $1",
+      [mobile_number]
+    );
+    if (0 < result_ttdetils.rows.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number not allowed to login!",
+      });
+    }
     const otp = generateOTP();
     otpStore[mobile_number] = otp; // store OTP
     const validfor = 3;
@@ -118,6 +128,17 @@ authRouter.post("/unreserved-ticket/ttlogin/send-otp", async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid ttid" });
     }
 
+    //check if user tries to login
+    const result_ttdetils = await client.query(
+      "select tt_id from users where mobile_number = $1",
+      [mobile_number]
+    );
+    if (0 < result_ttdetils.rows.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number not allowed to login!",
+      });
+    }
     //now first fetch mobile number from ttid
     const result_ttdetails = client.query(
       "select *from ttlogin where tt_id=$1",

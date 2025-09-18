@@ -1,9 +1,17 @@
 const { connectDB } = require("../database/connectDB");
 const cron = require("node-cron");
-cron.schedule("0 0 0 * * *", async () => {
+cron.schedule("*/15 * * * *", async () => {
   console.log("first schedula job!");
-  await newSeatAllocationCron();
+  //await newSeatAllocationCron();
+  await checkAndExpireTicket();
 });
+const checkAndExpireTicket = async () => {
+  try {
+    //first for each ticket, get the arrival time of that train for that specified destination mentioned in ticket
+    //add 1hr extra to that time,
+    //now if it matches that hour& min, expire it
+  } catch (err) {}
+};
 const newSeatAllocationCron = async () => {
   const pool = await connectDB(); // get the pool instance
   const result_trains = await pool.query(
