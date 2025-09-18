@@ -1,7 +1,6 @@
 const { connectDB } = require("../database/connectDB");
 const cron = require("node-cron");
-cron.schedule("*/2 * * * * *", async () => {
-  console.log("Checking ticket expirey!", new Date());
+cron.schedule("*/1 * * * *", async () => {
   // await newSeatAllocationCron();
   const pool = await connectDB(); // get the pool instance
   const client = await pool.connect();
@@ -18,34 +17,18 @@ const checkAndExpireTicket = async (client) => {
     for (let i = 0; i < result_active_pnrs.rows.length; i++) {
       const reslt_fulldetails = await client.query(
         `SELECT t.id, t.pnr, j.train_number, s.arrival, s.running_day FROM ticketdata t join journeyplandata j on t.fkjourneyplandata = j.id
-join schedules s on j.train_number = s.train_number
+join schedules s on j.train_number = s.train_number 
 where s.train_number = j.train_number and
 s.station_code = j.destination_code and
 t.pnr = $1;`,
         [result_active_pnrs.rows[i].pnr]
       );
-      //add1 1hr to fetcjed time
-      let [hours, minutes, seconds] = reslt_fulldetails.rows[0].arrival
-        .split(":")
-        .map(Number);
-      let dateObj = new Date();
-      dateObj.setHours(hours, minutes, seconds || 0, 0);
-      //add 1hr extra to that time,
-      dateObj.setHours(dateObj.getMinutes() + 1);
-
-      //now if it matches that hour& min, expire it
-      // Current time (today)
-      let now = new Date();
-      if (dateObj < now) {
+      const status = checkArrivalIST(reslt_fulldetails.rows[0].arrival);
+      if (status) {
         //update pnrstatus=2 (which is expired automatically)
         await client.query(
           "update ticketdata set pnrstatus=$1 where pnr = $2",
           [2, result_active_pnrs.rows[i].pnr]
-        );
-        console.log(
-          "Ticket:",
-          result_active_pnrs.rows[i].pnr + " expired automatically at:",
-          now
         );
       }
     }
@@ -176,3 +159,31 @@ const prepareChartForAllTrains = async () => {
   //once chart prepared, if ticketare in waiting list-> auto refund initiate( just display the amt refund aste)
   //update the seats
 };
+function getCurrentIST() {
+  const now = new Date();
+  const istOffset = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in ms
+  return new Date(now.getTime() + istOffset);
+}
+
+function checkArrivalIST(arrivalTime) {
+  // arrivalTime = "20:22:00" from PostgreSQL
+  const [h, m, s] = arrivalTime.split(":").map(Number);
+
+  // Current IST
+  let nowIST = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+  );
+
+  // Build today’s IST with arrival time
+  let arrivalIST = new Date(nowIST);
+  arrivalIST.setHours(h, m, s || 0, 0);
+  arrivalIST.setMinutes(arrivalIST.getMinutes() + 29);
+  arrivalIST = arrivalIST.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+  nowIST = nowIST.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+  console.log(arrivalIST, " @  ", nowIST);
+  if (arrivalIST <= nowIST) {
+    return true;
+  } else {
+    return false;
+  }
+}

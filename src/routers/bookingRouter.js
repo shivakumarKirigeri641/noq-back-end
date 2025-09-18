@@ -131,7 +131,9 @@ bookingRouter.post(
       }
 
       //insert
-      const today = new Date().toISOString().split("T")[0];
+      const today = new Date().toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+      });
       const result_traindetails = await client.query(
         "select *from trains where train_number=$1",
         [train_number]
