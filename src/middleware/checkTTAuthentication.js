@@ -1,21 +1,21 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const checkTTAuthentication = async (req, res, next) => {
-  const { token } = req.cookies;
-  if (!token) {
+  const { ttid } = req.cookies;
+  if (!ttid) {
     return res
       .status(200)
       .json({ status: "Failed", message: "Session expired!" });
   }
   try {
-    const result = await jwt.verify(token, process.env.SECRET_KEY);
+    const result = await jwt.verify(ttid, process.env.SECRET_KEY);
     if (!result) {
       1;
       return res
         .status(200)
         .json({ status: "Failed", message: "Invalid session!" });
     }
-    req.mobile_number = result.mobile_number;
+    req.ttid = result.ttid;
   } catch (err) {
     if (err.name === "TokenExpiredError") {
       return res
