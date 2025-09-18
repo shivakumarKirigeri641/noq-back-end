@@ -23,6 +23,8 @@ authRouter.post("/unreserved-ticket/send-otp", async (req, res) => {
         .json({ success: false, message: "Invalid mobile number" });
     }
     //first check if tt logins,
+    const pool = await connectDB(); // get the pool instance
+    const client = await pool.connect();
     const result_ttdetils = await client.query(
       "select tt_id from ttlogin where mobile_number = $1",
       [mobile_number]
@@ -69,11 +71,11 @@ authRouter.post("/unreserved-ticket/verifyotp", async (req, res) => {
         .json({ success: false, message: "Invalid mobile otp provided!" });
     }
     //check if mobile number exists?
-    /*if (otpStore[mobile_number] && otpStore[mobile_number] == otp) {
+    if (otpStore[mobile_number] && otpStore[mobile_number] == otp) {
       delete otpStore[mobile_number]; // remove OTP after verification
     } else {
       return res.status(400).json({ success: false, message: "Invalid OTP" });
-    }*/
+    }
     //if no, insert
     //else get the primary id and insert into userloginlistcount table
     //insert query
@@ -129,6 +131,8 @@ authRouter.post("/unreserved-ticket/ttlogin/send-otp", async (req, res) => {
     }
 
     //check if user tries to login
+    const pool = await connectDB(); // get the pool instance
+    const client = await pool.connect();
     const result_ttdetils = await client.query(
       "select tt_id from users where mobile_number = $1",
       [mobile_number]
@@ -183,11 +187,11 @@ authRouter.post("/unreserved-ticket/ttlogin/verifyotp", async (req, res) => {
         .status(400)
         .json({ success: false, message: "Invalid mobile otp provided!" });
     }
-    /*if (otpStore[ttid] && otpStore[ttid] == otp) {
+    if (otpStore[ttid] && otpStore[ttid] == otp) {
       delete otpStore[ttid]; // remove OTP after verification
     } else {
       return res.status(400).json({ success: false, message: "Invalid OTP" });
-    }*/
+    }
     //check if mobile number exists?
     //now first fetch mobile number from ttid
     const pool = await connectDB(); // get the pool instance
