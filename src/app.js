@@ -16,6 +16,7 @@ app.use(express.json());
 app.use(
   cors({
     origin: "https://main.d3uz8p7y5r9eby.amplifyapp.com",
+    methods: ["GET", "POST", "PUT"],
     credentials: true,
   })
 );
@@ -25,7 +26,7 @@ app.use("/", bookingRouter);
 app.use("/", trainsRouter);
 //app.use("/", dummyRouter1);
 app.use("/", ttRouter);
-connectDB()
+/*connectDB()
   .then(() => {
     console.log("Database connected successfully.");
     app.listen(process.env.OPTIONALPORT, () => {
@@ -34,4 +35,10 @@ connectDB()
   })
   .catch((err) => {
     console.log("Error in connecting database: Error:" + err.message);
-  });
+  });*/
+connectDB()
+  .then(() => console.log("Database connected successfully."))
+  .catch((err) => console.log("Error connecting database:", err.message));
+
+// Export app for AWS Amplify
+module.exports = app;
