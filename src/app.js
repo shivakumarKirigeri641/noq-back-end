@@ -15,7 +15,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(
   cors({
-    origin: process.env.UIURL,
+    origin: [process.env.UIURL, "http://localhost:3000"],
     methods: ["GET", "POST", "PUT"],
     credentials: true,
     optionsSuccessStatus: 200,
