@@ -1,4 +1,3 @@
-const serveless = require("serverless-http");
 const cookieParser = require("cookie-parser");
 const { connectDB } = require("./database/connectDB");
 require("./schedulars/newSeatAllocationCron");
@@ -16,7 +15,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(
   cors({
-    origin: "http://localhost:1234",
+    origin: "https://main.d3uz8p7y5r9eby.amplifyapp.com",
     credentials: true,
   })
 );
@@ -36,4 +35,3 @@ connectDB()
   .catch((err) => {
     console.log("Error in connecting database: Error:" + err.message);
   });
-module.exports.handler = serveless(app);
