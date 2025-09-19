@@ -36,19 +36,14 @@ app.use("/", bookingRouter);
 app.use("/", trainsRouter);
 //app.use("/", dummyRouter1);
 app.use("/", ttRouter);
-/*connectDB()
+const port = process.env.OPTIONALPORT || 5000;
+connectDB()
   .then(() => {
     console.log("Database connected successfully.");
-    app.listen(process.env.OPTIONALPORT || 5000, () => {
+    app.listen(port, "0.0.0.0", () => {
       console.log("Server is listening now.");
     });
   })
   .catch((err) => {
     console.log("Error in connecting database: Error:" + err.message);
-  });*/
-connectDB()
-  .then(() => console.log("Database connected successfully."))
-  .catch((err) => console.log("Error connecting database:", err.message));
-
-// Export app for AWS Amplify
-module.exports = app;
+  });
