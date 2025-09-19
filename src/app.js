@@ -15,17 +15,19 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(
   cors({
-    origin: "https://main.d3uz8p7y5r9eby.amplifyapp.com",
+    origin: process.env.UIURL,
     methods: ["GET", "POST", "PUT"],
     credentials: true,
+    optionsSuccessStatus: 200,
   })
 );
 app.options(
   "*",
   cors({
-    origin: "https://main.d3uz8p7y5r9eby.amplifyapp.com",
+    origin: process.env.UIURL,
     methods: ["GET", "POST", "PUT"],
     credentials: true,
+    optionsSuccessStatus: 200,
   })
 );
 app.use("/", authRouter);
