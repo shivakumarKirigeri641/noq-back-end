@@ -15,10 +15,8 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(
   cors({
-    origin: [process.env.UIURL, "http://localhost:3000"],
-    methods: ["GET", "POST", "PUT"],
+    origin: "http://localhost:1234",
     credentials: true,
-    optionsSuccessStatus: 200,
   })
 );
 /*app.options(
@@ -36,11 +34,10 @@ app.use("/", bookingRouter);
 app.use("/", trainsRouter);
 //app.use("/", dummyRouter1);
 app.use("/", ttRouter);
-const port = process.env.OPTIONALPORT || 5000;
 connectDB()
   .then(() => {
     console.log("Database connected successfully.");
-    app.listen(port, "0.0.0.0", () => {
+    app.listen(process.env.OPTIONALPORT, () => {
       console.log("Server is listening now.");
     });
   })

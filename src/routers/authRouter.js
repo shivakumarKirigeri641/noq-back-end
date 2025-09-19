@@ -25,6 +25,7 @@ authRouter.post("/unreserved-ticket/send-otp", async (req, res) => {
     //first check if tt logins,
     const pool = await connectDB(); // get the pool instance
     const client = await pool.connect();
+    console.log("test");
     const result_ttdetils = await client.query(
       "select tt_id from ttlogin where mobile_number = $1",
       [mobile_number]
