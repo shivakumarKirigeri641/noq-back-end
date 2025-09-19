@@ -41,8 +41,6 @@ authRouter.post("/unreserved-ticket/send-otp", async (req, res) => {
     const fast2smsResp = await axios.get(
       `https://www.fast2sms.com/dev/bulkV2?authorization=${process.env.FAST2SMS_API_KEY}&route=dlt&sender_id=NOQTRN&message=198302&variables_values=${otp}|${validfor}&numbers=${mobile_number}`
     );
-
-    console.log(fast2smsResp);
     if (fast2smsResp.data && fast2smsResp.data.return) {
       return res.json({
         ok: true,
@@ -163,7 +161,6 @@ authRouter.post("/unreserved-ticket/ttlogin/send-otp", async (req, res) => {
       const fast2smsResp = await axios.get(
         `https://www.fast2sms.com/dev/bulkV2?authorization=${process.env.FAST2SMS_API_KEY}&route=dlt&sender_id=NOQTRN&message=198302&variables_values=${otp}|${validfor}&numbers=${mobile_number}`
       );
-      console.log(fast2smsResp);
       if (fast2smsResp.data && fast2smsResp.data.return) {
         return res.json({
           ok: true,

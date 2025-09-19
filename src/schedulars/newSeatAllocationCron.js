@@ -49,10 +49,8 @@ const newSeatAllocationCron = async () => {
   const d = new Date(today);
   d.setDate(today.getDate() + 61); // start from tomorrow
   const formatted = d.toISOString().split("T")[0]; // YYYY-MM-DD
-  console.log(formatted); //nov 6
   for (let a = 0; a < result_trains.rows.length; a++) {
     train_number = result_trains.rows[a].train_number;
-    console.log("inserting new seats for:", train_number);
     const result_seatcount_sl = await pool.query(
       "select * from coach_sl where train_number = $1",
       [train_number]
@@ -180,7 +178,6 @@ function checkArrivalIST(arrivalTime) {
   arrivalIST.setMinutes(arrivalIST.getMinutes() + 29);
   arrivalIST = arrivalIST.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
   nowIST = nowIST.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-  console.log(arrivalIST, " @  ", nowIST);
   if (arrivalIST <= nowIST) {
     return true;
   } else {
