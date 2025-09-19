@@ -230,7 +230,6 @@ bookingRouter.get(
     const client = await pool.connect();
     try {
       const mobile_number = req.mobile_number;
-      console.log(req.mobile_number);
       if (!mobile_number) {
         throw new Error("Invalid mobile number!");
       }

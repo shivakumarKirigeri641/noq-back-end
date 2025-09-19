@@ -15,10 +15,19 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(
   cors({
-    origin: "https://main.d3uz8p7y5r9eby.amplifyapp.com",
+    origin: "http://localhost:1234",
     credentials: true,
   })
 );
+/*app.options(
+  "*",
+  cors({
+    origin: process.env.UIURL,
+    methods: ["GET", "POST", "PUT"],
+    credentials: true,
+    optionsSuccessStatus: 200,
+  })
+);*/
 app.use("/", authRouter);
 app.use("/", stationsRouter);
 app.use("/", bookingRouter);

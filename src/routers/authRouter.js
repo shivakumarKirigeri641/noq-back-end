@@ -25,6 +25,7 @@ authRouter.post("/unreserved-ticket/send-otp", async (req, res) => {
     //first check if tt logins,
     const pool = await connectDB(); // get the pool instance
     const client = await pool.connect();
+    console.log("test");
     const result_ttdetils = await client.query(
       "select tt_id from ttlogin where mobile_number = $1",
       [mobile_number]
@@ -41,8 +42,6 @@ authRouter.post("/unreserved-ticket/send-otp", async (req, res) => {
     const fast2smsResp = await axios.get(
       `https://www.fast2sms.com/dev/bulkV2?authorization=${process.env.FAST2SMS_API_KEY}&route=dlt&sender_id=NOQTRN&message=198302&variables_values=${otp}|${validfor}&numbers=${mobile_number}`
     );
-
-    console.log(fast2smsResp);
     if (fast2smsResp.data && fast2smsResp.data.return) {
       return res.json({
         ok: true,
@@ -106,7 +105,6 @@ authRouter.post("/unreserved-ticket/verifyotp", async (req, res) => {
     ]);
     const token = await jwt.sign({ mobile_number }, process.env.SECRET_KEY, {
       expiresIn: "1d",
-      SEC,
     });
     req.mobile_number = mobile_number;
     req.mobileid = result_mobilenumberdetails.rows[0].mobile_number;
@@ -164,7 +162,6 @@ authRouter.post("/unreserved-ticket/ttlogin/send-otp", async (req, res) => {
       const fast2smsResp = await axios.get(
         `https://www.fast2sms.com/dev/bulkV2?authorization=${process.env.FAST2SMS_API_KEY}&route=dlt&sender_id=NOQTRN&message=198302&variables_values=${otp}|${validfor}&numbers=${mobile_number}`
       );
-      console.log(fast2smsResp);
       if (fast2smsResp.data && fast2smsResp.data.return) {
         return res.json({
           ok: true,
