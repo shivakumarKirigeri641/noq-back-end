@@ -13,6 +13,14 @@ const bookingRouter = require("./routers/bookingRouter");
 const ttRouter = require("./routers/ttRouter");
 app.use(cookieParser());
 app.use(express.json());
+app.options(
+  "*",
+  cors({
+    origin: "https://main.d3uz8p7y5r9eby.amplifyapp.com",
+    methods: ["GET", "POST", "PUT"],
+    credentials: true,
+  })
+);
 app.use(
   cors({
     origin: "https://main.d3uz8p7y5r9eby.amplifyapp.com",
