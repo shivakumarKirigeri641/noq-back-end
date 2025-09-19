@@ -21,7 +21,7 @@ app.use(
     optionsSuccessStatus: 200,
   })
 );
-app.options(
+/*app.options(
   "*",
   cors({
     origin: process.env.UIURL,
@@ -29,7 +29,7 @@ app.options(
     credentials: true,
     optionsSuccessStatus: 200,
   })
-);
+);*/
 app.use("/", authRouter);
 app.use("/", stationsRouter);
 app.use("/", bookingRouter);
