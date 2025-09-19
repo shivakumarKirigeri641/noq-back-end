@@ -39,7 +39,7 @@ app.use("/", ttRouter);
 /*connectDB()
   .then(() => {
     console.log("Database connected successfully.");
-    app.listen(process.env.OPTIONALPORT, () => {
+    app.listen(process.env.OPTIONALPORT || 5000, () => {
       console.log("Server is listening now.");
     });
   })
