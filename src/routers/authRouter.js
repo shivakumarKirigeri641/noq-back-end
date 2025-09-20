@@ -327,4 +327,7 @@ authRouter.post(
     }
   }
 );
+authRouter.get("/testme", async (req, res) => {
+  res.send("test succeeded.");
+});
 module.exports = authRouter;
