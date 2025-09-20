@@ -109,10 +109,7 @@ authRouter.post("/unreserved-ticket/verifyotp", async (req, res) => {
     req.mobileid = result_mobilenumberdetails.rows[0].mobile_number;
     //res.cookie("token", token);
     res.cookie("token", token, {
-      httpOnly: false,
-      secure: true,
-      sameSite: false,
-      expiresIn: "1d",
+      expires: 24 * 60 * 60 * 1000, // 1 day in ms,
     });
     return res.json({
       success: true,
