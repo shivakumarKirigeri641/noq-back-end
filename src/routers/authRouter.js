@@ -17,12 +17,6 @@ function generateOTP() {
 authRouter.post("/unreserved-ticket/send-otp", async (req, res) => {
   try {
     const { mobile_number } = req.body;
-    console.log(
-      "host:" + process.env.PGHOST,
-      ", db:" + process.env.PGDATABASE,
-      ", user:" + process.env.PGUSER,
-      ", PWD:" + process.env.PGPASSWORD
-    );
     if (!mobile_number || !/^\d{10}$/.test(mobile_number)) {
       return res
         .status(400)
@@ -31,7 +25,6 @@ authRouter.post("/unreserved-ticket/send-otp", async (req, res) => {
     //first check if tt logins,
     const pool = await connectDB(); // get the pool instance
     const client = await pool.connect();
-    console.log("test");
     const result_ttdetils = await client.query(
       "select tt_id from ttlogin where mobile_number = $1",
       [mobile_number]
