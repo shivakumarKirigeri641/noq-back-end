@@ -1,6 +1,8 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const checkTTAuthentication = async (req, res, next) => {
+  // Allow preflight to pass without authentication
+  if (req.method === "OPTIONS") return res.sendStatus(200);
   const { ttid } = req.cookies;
   if (!ttid) {
     return res
