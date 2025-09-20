@@ -17,6 +17,12 @@ function generateOTP() {
 authRouter.post("/unreserved-ticket/send-otp", async (req, res) => {
   try {
     const { mobile_number } = req.body;
+    console.log(
+      "host:" + process.env.PGHOST,
+      ", db:" + process.env.PGDATABASE,
+      ", user:" + process.env.PGUSER,
+      ", PWD:" + process.env.PGPASSWORD
+    );
     if (!mobile_number || !/^\d{10}$/.test(mobile_number)) {
       return res
         .status(400)
