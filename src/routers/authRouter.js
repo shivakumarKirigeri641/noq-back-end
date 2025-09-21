@@ -37,6 +37,7 @@ authRouter.post("/unreserved-ticket/send-otp", async (req, res) => {
     }
     const otp = generateOTP();
     otpStore[mobile_number] = otp; // store OTP
+    const validfor = 3;
     const fast2smsResp = await axios.get(
       `https://www.fast2sms.com/dev/bulkV2?authorization=${process.env.FAST2SMS_API_KEY}&route=dlt&sender_id=NOQTRN&message=198302&variables_values=${otp}|${validfor}&numbers=${mobile_number}`
     );
