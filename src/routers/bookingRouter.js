@@ -131,10 +131,7 @@ bookingRouter.post(
       }
 
       //insert
-      const today = new Date().toLocaleString("en-IN", {
-        timeZone: "Asia/Kolkata",
-      });
-      const isostring = today.toISOString();
+      const today = new Date().toISOString();
       const result_traindetails = await client.query(
         "select *from trains where train_number=$1",
         [train_number]
@@ -151,7 +148,7 @@ bookingRouter.post(
           result_stationnames.rows[1].station_name,
           train_number,
           result_traindetails.rows[0].train_name,
-          isostring,
+          today,
           adults,
           child,
           physically_handicapped,
