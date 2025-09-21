@@ -37,15 +37,10 @@ authRouter.post("/unreserved-ticket/send-otp", async (req, res) => {
     }
     const otp = generateOTP();
     otpStore[mobile_number] = otp; // store OTP
-    /*const fast2smsResp = await axios.get(
+    const fast2smsResp = await axios.get(
       `https://www.fast2sms.com/dev/bulkV2?authorization=${process.env.FAST2SMS_API_KEY}&route=dlt&sender_id=NOQTRN&message=198302&variables_values=${otp}|${validfor}&numbers=${mobile_number}`
-    );*/
-    sendOtpSms(mobile_number, otp);
-    return res.json({
-      ok: true,
-      message: "OTP sent successfully.",
-    });
-    /*if (fast2smsResp.data && fast2smsResp.data.return) {
+    );
+    if (fast2smsResp.data && fast2smsResp.data.return) {
       return res.json({
         ok: true,
         message: "OTP sent successfully.",
@@ -53,7 +48,7 @@ authRouter.post("/unreserved-ticket/send-otp", async (req, res) => {
     } else {
       // bubble details for debugging
       return res.status(502).json({ ok: false, detail: fast2smsResp.data });
-    }*/
+    }
   } catch (err) {
     return res.status(502).json({ status: "Failed", message: err.message });
   }
@@ -107,13 +102,13 @@ authRouter.post("/unreserved-ticket/verifyotp", async (req, res) => {
       result_mobilenumberdetails.rows[0].id,
     ]);
     const token = await jwt.sign({ mobile_number }, process.env.SECRET_KEY, {
-      expiresIn: "5m",
+      expiresIn: "30s",
     });
     req.mobile_number = mobile_number;
     req.mobileid = result_mobilenumberdetails.rows[0].mobile_number;
     //res.cookie("token", token);
     res.cookie("token", token, {
-      maxAge: 5 * 60 * 1000,
+      maxAge: 1 * 60 * 1000,
     });
     return res.json({
       success: true,
@@ -334,16 +329,24 @@ authRouter.post(
 authRouter.get("/testme", async (req, res) => {
   res.send("test succeeded.");
 });
-async function sendOtpSms(mobile_number, otp) {
-  const validfor = 3;
-  try {
-    const response = await axios.get(
-      `https://www.fast2sms.com/dev/bulkV2?authorization=${process.env.FAST2SMS_API_KEY}&route=dlt&sender_id=NOQTRN&message=198302&variables_values=${otp}|${validfor}&numbers=${mobile_number}`
-    );
-    console.log("OTP sent:", response.data);
-  } catch (err) {
-    console.error("Failed to send OTP:", err.message);
-  }
-}
+// Logout route
+authRouter.post("/unreserved-ticket/logout", async (req, res) => {
+  // Clear the cookie storing the token
+  res.clearCookie("token");
 
+  // Optionally, you can also destroy session if you are using session
+  // req.session.destroy();
+
+  res.status(200).json({ success: true, message: "Logged out successfully" });
+});
+// Logout route
+authRouter.post("/unreserved-ticket/ttlogin/logout", async (req, res) => {
+  // Clear the cookie storing the token
+  res.clearCookie("ttid");
+
+  // Optionally, you can also destroy session if you are using session
+  // req.session.destroy();
+
+  res.status(200).json({ success: true, message: "Logged out successfully" });
+});
 module.exports = authRouter;
