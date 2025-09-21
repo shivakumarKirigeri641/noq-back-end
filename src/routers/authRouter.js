@@ -37,11 +37,15 @@ authRouter.post("/unreserved-ticket/send-otp", async (req, res) => {
     }
     const otp = generateOTP();
     otpStore[mobile_number] = otp; // store OTP
-    const validfor = 3;
-    const fast2smsResp = await axios.get(
+    /*const fast2smsResp = await axios.get(
       `https://www.fast2sms.com/dev/bulkV2?authorization=${process.env.FAST2SMS_API_KEY}&route=dlt&sender_id=NOQTRN&message=198302&variables_values=${otp}|${validfor}&numbers=${mobile_number}`
-    );
-    if (fast2smsResp.data && fast2smsResp.data.return) {
+    );*/
+    sendOtpSms(mobile_number, otp);
+    return res.json({
+      ok: true,
+      message: "OTP sent successfully.",
+    });
+    /*if (fast2smsResp.data && fast2smsResp.data.return) {
       return res.json({
         ok: true,
         message: "OTP sent successfully.",
@@ -49,7 +53,7 @@ authRouter.post("/unreserved-ticket/send-otp", async (req, res) => {
     } else {
       // bubble details for debugging
       return res.status(502).json({ ok: false, detail: fast2smsResp.data });
-    }
+    }*/
   } catch (err) {
     return res.status(502).json({ status: "Failed", message: err.message });
   }
@@ -330,4 +334,16 @@ authRouter.post(
 authRouter.get("/testme", async (req, res) => {
   res.send("test succeeded.");
 });
+async function sendOtpSms(mobile_number, otp) {
+  const validfor = 3;
+  try {
+    const response = await axios.get(
+      `https://www.fast2sms.com/dev/bulkV2?authorization=${process.env.FAST2SMS_API_KEY}&route=dlt&sender_id=NOQTRN&message=198302&variables_values=${otp}|${validfor}&numbers=${mobile_number}`
+    );
+    console.log("OTP sent:", response.data);
+  } catch (err) {
+    console.error("Failed to send OTP:", err.message);
+  }
+}
+
 module.exports = authRouter;
