@@ -103,13 +103,13 @@ authRouter.post("/unreserved-ticket/verifyotp", async (req, res) => {
       result_mobilenumberdetails.rows[0].id,
     ]);
     const token = await jwt.sign({ mobile_number }, process.env.SECRET_KEY, {
-      expiresIn: "30s",
+      expiresIn: "5min",
     });
     req.mobile_number = mobile_number;
     req.mobileid = result_mobilenumberdetails.rows[0].mobile_number;
     //res.cookie("token", token);
     res.cookie("token", token, {
-      maxAge: 1 * 60 * 1000,
+      maxAge: 5 * 60 * 1000,
     });
     return res.json({
       success: true,
